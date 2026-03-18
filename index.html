@@ -2,31 +2,210 @@
 <html lang="sv">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#050b12" />
   <title>HyenaX2</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=2" />
 </head>
 <body>
+  <div class="app">
+    <div class="blob" aria-hidden="true"></div>
 
-<div class="topbar" id="datetime"></div>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">HyenaX2</div>
+        <div class="dateBlock" id="dateBlock">Torsdag 19 mars • 10:12</div>
+      </header>
 
-<div class="progress">
-  <div id="calls"></div>
-  <div id="answers"></div>
-</div>
+      <section class="hero">
+        <div class="panel progressPanel">
+          <div class="metric">
+            <div class="metricHead">
+              <span class="metricLabel">Samtal idag</span>
+              <button class="tinyBtn" id="goalBtn" type="button">Mål</button>
+            </div>
+            <div class="metricValue" id="callsText">0 / 20</div>
+            <div class="dots" id="callsDots"></div>
+          </div>
 
-<div class="timer" id="timer"></div>
+          <div class="metric">
+            <div class="metricHead">
+              <span class="metricLabel alt">Svar idag</span>
+            </div>
+            <div class="metricValue alt" id="answersText">0</div>
+            <div class="dots" id="answersDots"></div>
+          </div>
+        </div>
 
-<div class="news">EdTech fokus idag...</div>
+        <div class="panel timerPanel">
+          <div class="timerHead">
+            <div>
+              <div class="timerLabel">Utringgningstimer</div>
+              <div class="timerValue" id="timerValue">25:00</div>
+              <div class="timerHint" id="timerHint">Fokuspass utan loggning</div>
+            </div>
+          </div>
 
-<div class="actions">
-  <button onclick="importData()">Import</button>
-  <button onclick="exportData()">Export</button>
-  <button onclick="surprise()">Överraska mig</button>
-</div>
+          <button class="timerRail" id="timerRail" type="button" aria-label="Starta eller pausa timer">
+            <span class="timerFill" id="timerFill"></span>
+          </button>
 
-<div id="list"></div>
+          <div class="toolbar">
+            <button class="btn orange" id="timerToggleBtn" type="button">Starta</button>
+            <button class="btn ghost" id="timerResetBtn" type="button">Nollställ</button>
+            <button class="btn ghost" id="timerPresetBtn" type="button">15 min</button>
+          </div>
+        </div>
+      </section>
 
-<script src="app.js"></script>
+      <section class="flowBar panel">
+        <div class="flowTag">Flöde</div>
+        <div class="flowText" id="flowText">EdTech: plats för nyhetsflöde, fokus eller egen text kopplad till jobbet.</div>
+      </section>
+
+      <section class="workPanels">
+        <div class="panel importPanel">
+          <div class="sectionHead">
+            <h2>Import & backup</h2>
+            <div class="subtle">Excel in, JSON backup ut/in</div>
+          </div>
+
+          <textarea id="pasteArea" class="field area" placeholder="Klistra in från Excel här. Ordning: Organisation, Kontaktperson, Telefon, E-post, VNR, Anteckning"></textarea>
+
+          <div class="toolbar wrap">
+            <button class="btn primary" id="replaceBtn" type="button">Ersätt lista</button>
+            <button class="btn" id="appendBtn" type="button">Lägg till</button>
+            <button class="btn" id="copyTemplateBtn" type="button">Kopiera mall</button>
+            <button class="btn" id="exportBtn" type="button">Exportera backup</button>
+            <button class="btn" id="importJsonBtn" type="button">Importera backup</button>
+            <button class="btn" id="surpriseBtn" type="button">Överraska mig</button>
+            <button class="btn" id="toggleSuccessBtn" type="button">Dölj success</button>
+          </div>
+          <input id="jsonFileInput" type="file" accept="application/json" hidden />
+        </div>
+
+        <div class="panel taskPanel">
+          <div class="sectionHead">
+            <h2>Tasks</h2>
+            <div class="subtle">Delmål och små actions</div>
+          </div>
+
+          <div class="taskComposer">
+            <input class="field" id="taskInput" type="text" placeholder="Lägg till task eller delmål" />
+            <button class="btn primary" id="addTaskBtn" type="button">Lägg till</button>
+          </div>
+
+          <div class="taskList" id="taskList"></div>
+        </div>
+      </section>
+
+      <section class="leadSection">
+        <div class="sectionHead sectionHeadLeads">
+          <h2>Startmeny</h2>
+          <div class="leadCount" id="leadCount">0 kunder</div>
+        </div>
+
+        <div class="leadList" id="leadList"></div>
+      </section>
+    </main>
+
+    <div class="overlay" id="overlay">
+      <div class="modal">
+        <div class="modalTop">
+          <div>
+            <div class="modalTitle" id="modalTitle">Organisation</div>
+            <div class="modalMeta" id="modalMeta">Kontaktperson • status</div>
+          </div>
+          <button class="iconBtn" id="closeModalBtn" type="button">✕</button>
+        </div>
+
+        <div class="modalGrid">
+          <section class="modalCard">
+            <div class="cardTitleRow">
+              <h3>Kontakt</h3>
+              <button class="btn small amber" id="markBtn" type="button">💡 Markera</button>
+            </div>
+
+            <div class="infoRow">
+              <div class="infoLabel">Telefon</div>
+              <div class="infoValue" id="modalPhone">-</div>
+              <button class="btn small" id="copyPhoneBtn" type="button">Kopiera</button>
+            </div>
+
+            <div class="infoRow">
+              <div class="infoLabel">E-post</div>
+              <div class="infoValue" id="modalEmail">-</div>
+              <button class="btn small" id="copyEmailBtn" type="button">Kopiera</button>
+            </div>
+
+            <div class="infoRow">
+              <div class="infoLabel">VNR</div>
+              <div class="infoValue" id="modalVnr">-</div>
+              <button class="btn small" id="copyVnrBtn" type="button">Kopiera</button>
+            </div>
+
+            <div class="toolbar wrap">
+              <button class="btn" id="normalMailBtn" type="button">Nytt mail</button>
+              <button class="btn primary" id="crmMailBtn" type="button">Maila CRM</button>
+            </div>
+          </section>
+
+          <section class="modalCard">
+            <div class="cardTitleRow">
+              <h3>Logga samtal</h3>
+              <div class="subtle" id="attemptsText">0 försök</div>
+            </div>
+
+            <div class="toolbar wrap">
+              <button class="btn primary" id="logCallBtn" type="button">Ringt nu</button>
+            </div>
+
+            <div class="toolbar wrap hidden" id="answerFlow">
+              <button class="btn orange" id="noAnswerBtn" type="button">Inget svar</button>
+              <button class="btn" id="answeredBtn" type="button">Svarade</button>
+            </div>
+
+            <div class="toolbar wrap hidden" id="resultFlow">
+              <button class="btn green" id="meetingBtn" type="button">Bokat möte</button>
+              <button class="btn" id="notInterestedBtn" type="button">Ej intresserad</button>
+            </div>
+          </section>
+        </div>
+
+        <section class="modalCard">
+          <div class="cardTitleRow">
+            <h3>Anteckning</h3>
+            <div class="subtle">Nyast överst</div>
+          </div>
+
+          <textarea class="field area smallArea" id="noteInput" placeholder="Skriv en ny anteckning"></textarea>
+          <div class="toolbar wrap">
+            <button class="btn" id="flowBtn" type="button">Sätt som flödestext</button>
+            <button class="btn primary" id="addNoteBtn" type="button">Lägg till anteckning</button>
+          </div>
+        </section>
+
+        <div class="modalGrid">
+          <section class="modalCard">
+            <div class="cardTitleRow">
+              <h3>Logg</h3>
+            </div>
+            <div class="historyList" id="logList"></div>
+          </section>
+
+          <section class="modalCard">
+            <div class="cardTitleRow">
+              <h3>Anteckningar</h3>
+            </div>
+            <div class="historyList" id="noteList"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div class="toastWrap" id="toastWrap"></div>
+  </div>
+
+  <script src="app.js?v=2"></script>
 </body>
 </html>
