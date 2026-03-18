@@ -1,0 +1,19 @@
+body {
+  background:#050b12;
+  color:white;
+  font-family:system-ui;
+  margin:0;
+}
+.topbar {padding:10px; opacity:.7;}
+.progress {padding:10px;}
+.timer {height:6px; background:#ff7a00;}
+.news {padding:8px; opacity:.8;}
+.actions {padding:10px;}
+button {margin-right:5px;}
+.card {
+  padding:10px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+.success {border-left:3px solid #34d399;}
+.lamp {background:rgba(255,200,0,.1);}
+.highlight {outline:2px solid #22d3ee;}
