@@ -1,8 +1,16 @@
 
 (() => {
-  const STORAGE_KEY = "hyenax2_v2_state";
+  const STORAGE_KEY = "hyenax2_v3_state";
   const TEMPLATE = ["Organisation","Kontaktperson","Telefon","E-post","VNR","Anteckning"].join("\t");
-  const DEFAULT_FLOW = "EdTech: plats för nyhetsflöde, fokus eller egen text kopplad till jobbet.";
+
+  const demoLeads = [
+    ["Sävsjö", "Erik", "0704662700", "erik@mail.se", "12345", "Ville bli återkopplad nästa vecka"],
+    ["Lomma", "Lisa", "0735123456", "lisa@mail.se", "", "Testar ny kartläggning"],
+    ["Värmdö", "Anna", "0707001122", "anna@mail.se", "77881", "Prio efter lunch"],
+    ["Nacka", "Johan", "0720008899", "johan@mail.se", "99887", "Har svarat tidigare"],
+    ["Täby", "Maria", "0701239090", "maria@mail.se", "", "Ring igen torsdag"],
+    ["Sollentuna", "Per", "0704400011", "per@mail.se", "55442", "Intresserad av demo"],
+  ];
 
   const $ = (id) => document.getElementById(id);
 
@@ -20,16 +28,10 @@
     timerToggleBtn: $("timerToggleBtn"),
     timerResetBtn: $("timerResetBtn"),
     timerPresetBtn: $("timerPresetBtn"),
-    flowText: $("flowText"),
-    pasteArea: $("pasteArea"),
-    replaceBtn: $("replaceBtn"),
-    appendBtn: $("appendBtn"),
-    copyTemplateBtn: $("copyTemplateBtn"),
-    exportBtn: $("exportBtn"),
-    importJsonBtn: $("importJsonBtn"),
-    jsonFileInput: $("jsonFileInput"),
+    addLeadBtn: $("addLeadBtn"),
     surpriseBtn: $("surpriseBtn"),
-    toggleSuccessBtn: $("toggleSuccessBtn"),
+    dataBtn: $("dataBtn"),
+    copyTemplateBtn: $("copyTemplateBtn"),
     taskInput: $("taskInput"),
     addTaskBtn: $("addTaskBtn"),
     taskList: $("taskList"),
@@ -56,11 +58,26 @@
     meetingBtn: $("meetingBtn"),
     notInterestedBtn: $("notInterestedBtn"),
     noteInput: $("noteInput"),
-    flowBtn: $("flowBtn"),
     addNoteBtn: $("addNoteBtn"),
     logList: $("logList"),
     noteList: $("noteList"),
     attemptsText: $("attemptsText"),
+    dataOverlay: $("dataOverlay"),
+    closeDataModalBtn: $("closeDataModalBtn"),
+    pasteArea: $("pasteArea"),
+    appendBtn: $("appendBtn"),
+    replaceBtn: $("replaceBtn"),
+    exportBtn: $("exportBtn"),
+    importJsonBtn: $("importJsonBtn"),
+    jsonFileInput: $("jsonFileInput"),
+    demoBtn: $("demoBtn"),
+    manualOrg: $("manualOrg"),
+    manualContact: $("manualContact"),
+    manualPhone: $("manualPhone"),
+    manualEmail: $("manualEmail"),
+    manualVnr: $("manualVnr"),
+    manualNote: $("manualNote"),
+    saveManualBtn: $("saveManualBtn"),
     toastWrap: $("toastWrap"),
   };
 
@@ -68,17 +85,15 @@
     leads: [],
     tasks: [],
     goalCalls: 20,
-    hideSuccess: false,
-    flowText: DEFAULT_FLOW,
     ui: {
       activeLeadId: null,
       surpriseLeadId: null,
+      rouletteRunning: false,
     },
     timer: {
       durationSec: 25 * 60,
       remainingSec: 25 * 60,
       running: false,
-      startedAt: null,
       lastTickAt: null,
       preset: 25,
     }
@@ -175,25 +190,34 @@
 
     return data
       .filter(cols => cols.some(cell => String(cell).trim() !== ""))
-      .map(cols => {
-        const seedNote = (cols[5] || "").trim();
-        const createdAt = nowIso();
-        return {
-          id: uid(),
-          organization: (cols[0] || "").trim(),
-          contactPerson: (cols[1] || "").trim(),
-          phone: (cols[2] || "").trim(),
-          email: (cols[3] || "").trim(),
-          vnr: (cols[4] || "").trim(),
-          seedNote,
-          createdAt,
-          updatedAt: createdAt,
-          marked: false,
-          logs: [],
-          notes: seedNote ? [{ id: uid(), text: seedNote, createdAt, source: "import" }] : [],
-        };
-      })
+      .map(cols => buildLead({
+        organization: (cols[0] || "").trim(),
+        contactPerson: (cols[1] || "").trim(),
+        phone: (cols[2] || "").trim(),
+        email: (cols[3] || "").trim(),
+        vnr: (cols[4] || "").trim(),
+        note: (cols[5] || "").trim(),
+      }))
       .filter(item => item.organization || item.contactPerson || item.phone || item.email || item.vnr);
+  }
+
+  function buildLead({ organization="", contactPerson="", phone="", email="", vnr="", note="" }){
+    const createdAt = nowIso();
+    const cleanedNote = note.trim();
+    return {
+      id: uid(),
+      organization: organization.trim(),
+      contactPerson: contactPerson.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      vnr: vnr.trim(),
+      seedNote: cleanedNote,
+      createdAt,
+      updatedAt: createdAt,
+      marked: false,
+      logs: [],
+      notes: cleanedNote ? [{ id: uid(), text: cleanedNote, createdAt }] : [],
+    };
   }
 
   function copy(text, label){
@@ -256,7 +280,7 @@
       div.innerHTML = `
         <input class="taskCheck" type="checkbox" ${task.done ? "checked" : ""} />
         <div class="taskText">${escapeHtml(task.text)}</div>
-        <button class="btn small ghost" type="button">✕</button>
+        <button class="actionBtn small fixedMiniBtn ghost" type="button"><span>Ta bort</span></button>
       `;
       div.querySelector(".taskCheck").addEventListener("change", (e) => {
         task.done = e.target.checked;
@@ -280,18 +304,28 @@
     article.className = `leadCard ${status.key === "success" ? "success" : ""} ${lead.marked ? "marked" : ""} ${state.ui.surpriseLeadId === lead.id ? "surprise" : ""}`;
     article.dataset.id = lead.id;
     article.innerHTML = `
-      <div class="leadMain">
-        <div class="leadHead">
-          <span class="statusDot ${status.key}"></span>
-          <div class="orgName">${escapeHtml(lead.organization || "Namnlös")}</div>
+      <div class="leadGlow"></div>
+      <div class="leadHead">
+        <div class="leadInfo">
+          <div class="statusRow">
+            <span class="statusDot ${status.key}"></span>
+            <div class="orgName">${escapeHtml(lead.organization || "Namnlös")}</div>
+          </div>
+          <div class="contactLine">${escapeHtml(lead.contactPerson || "Kontakt saknas")}</div>
         </div>
-        <div class="contactLine">${escapeHtml(lead.contactPerson || "Kontakt saknas")}</div>
-        <div class="previewLine">${escapeHtml(preview.text)}</div>
+        <button class="actionBtn small lampBtn ${lead.marked ? "on" : ""}" type="button" data-lamp="${lead.id}">
+          <span class="btnIcon">💡</span>
+        </button>
       </div>
-      <div class="leadSide">
-        <button class="btn small lampBtn ${lead.marked ? "on" : ""}" type="button" data-lamp="${lead.id}">💡</button>
-        <div class="stateBadge ${status.key}">${escapeHtml(status.label)} · ${attempts} försök</div>
+
+      <div class="previewLine">${escapeHtml(preview.text)}</div>
+
+      <div class="leadBottom">
         <div class="timeLine">${preview.time ? escapeHtml(fmtShort(preview.time)) : "-"}</div>
+        <div class="sideMeta">
+          <div class="stateBadge ${status.key}">${escapeHtml(status.label)}</div>
+          <div class="timeLine">${attempts} försök</div>
+        </div>
       </div>
     `;
 
@@ -310,7 +344,6 @@
 
   function renderLeads(){
     const visible = [...state.leads]
-      .filter(lead => !(state.hideSuccess && getLeadStatus(lead).key === "success"))
       .sort((a,b) => {
         const aSuccess = getLeadStatus(a).key === "success" ? 1 : 0;
         const bSuccess = getLeadStatus(b).key === "success" ? 1 : 0;
@@ -320,17 +353,12 @@
 
     els.leadList.innerHTML = "";
     if(!visible.length){
-      els.leadList.innerHTML = `<div class="emptyState">Ingen kundlista ännu. Klistra in från Excel ovan.</div>`;
+      els.leadList.innerHTML = `<div class="emptyState">Ingen kundlista ännu. Öppna Data eller Addera kort för att komma igång.</div>`;
     } else {
       visible.forEach(lead => els.leadList.appendChild(buildCard(lead)));
     }
 
     els.leadCount.textContent = `${visible.length} kunder`;
-    els.toggleSuccessBtn.textContent = state.hideSuccess ? "Visa success" : "Dölj success";
-  }
-
-  function renderFlow(){
-    els.flowText.textContent = state.flowText || DEFAULT_FLOW;
   }
 
   function getActiveLead(){
@@ -354,6 +382,15 @@
     els.overlay.classList.remove("open");
   }
 
+  function openDataModal(){
+    els.dataOverlay.classList.add("open");
+    updateAppendReady();
+  }
+
+  function closeDataModal(){
+    els.dataOverlay.classList.remove("open");
+  }
+
   function renderModal(){
     const lead = getActiveLead();
     if(!lead){
@@ -368,9 +405,9 @@
     els.modalEmail.textContent = lead.email || "-";
     els.modalVnr.textContent = lead.vnr || "-";
     els.crmMailBtn.disabled = !lead.vnr;
-    els.crmMailBtn.textContent = lead.vnr ? "Maila CRM" : "Saknar VNR";
-    els.markBtn.textContent = lead.marked ? "💡 Markerad" : "💡 Markera";
-    els.markBtn.className = `btn small ${lead.marked ? "amber" : ""}`;
+    els.crmMailBtn.querySelector("span:last-child").textContent = lead.vnr ? "Maila CRM" : "Saknar VNR";
+    els.markBtn.className = `actionBtn small fixedMiniBtn ${lead.marked ? "amber" : ""}`;
+    els.markBtn.querySelector("span:last-child").textContent = lead.marked ? "Markerad" : "Markera";
 
     const attempts = (lead.logs || []).filter(l => l.event === "Ringt").length;
     els.attemptsText.textContent = `${attempts} försök`;
@@ -394,8 +431,19 @@
             <span class="tag">${escapeHtml(log.event)}</span>
           </div>
           <div class="historyText">${escapeHtml([log.event, log.outcome, log.result].filter(Boolean).join(" / "))}</div>
+          <div class="historyActions">
+            <button class="actionBtn small fixedMiniBtn" type="button" data-edit-log="${log.id}"><span>Redigera</span></button>
+            <button class="actionBtn small fixedMiniBtn ghost" type="button" data-del-log="${log.id}"><span>Ta bort</span></button>
+          </div>
         `;
         els.logList.appendChild(div);
+      });
+
+      els.logList.querySelectorAll("[data-edit-log]").forEach(btn => {
+        btn.addEventListener("click", () => editLog(lead.id, btn.dataset.editLog));
+      });
+      els.logList.querySelectorAll("[data-del-log]").forEach(btn => {
+        btn.addEventListener("click", () => deleteLog(lead.id, btn.dataset.delLog));
       });
     }
 
@@ -411,8 +459,19 @@
             <span class="tag">Anteckning</span>
           </div>
           <div class="historyText">${escapeHtml(note.text)}</div>
+          <div class="historyActions">
+            <button class="actionBtn small fixedMiniBtn" type="button" data-edit-note="${note.id}"><span>Redigera</span></button>
+            <button class="actionBtn small fixedMiniBtn ghost" type="button" data-del-note="${note.id}"><span>Ta bort</span></button>
+          </div>
         `;
         els.noteList.appendChild(div);
+      });
+
+      els.noteList.querySelectorAll("[data-edit-note]").forEach(btn => {
+        btn.addEventListener("click", () => editNote(lead.id, btn.dataset.editNote));
+      });
+      els.noteList.querySelectorAll("[data-del-note]").forEach(btn => {
+        btn.addEventListener("click", () => deleteNote(lead.id, btn.dataset.delNote));
       });
     }
   }
@@ -446,19 +505,54 @@
     persistAndRender();
   }
 
+  function editLog(leadId, logId){
+    const lead = state.leads.find(l => l.id === leadId);
+    const log = lead?.logs?.find(x => x.id === logId);
+    if(!lead || !log) return;
+    const current = [log.event, log.outcome, log.result].filter(Boolean).join(" / ");
+    const value = prompt("Redigera logg:", current);
+    if(value === null) return;
+    const parts = value.split("/").map(s => s.trim()).filter(Boolean);
+    log.event = parts[0] || "Ringt";
+    log.outcome = parts[1] || null;
+    log.result = parts[2] || null;
+    lead.updatedAt = nowIso();
+    persistAndRender();
+  }
+
+  function deleteLog(leadId, logId){
+    const lead = state.leads.find(l => l.id === leadId);
+    if(!lead) return;
+    lead.logs = (lead.logs || []).filter(x => x.id !== logId);
+    lead.updatedAt = nowIso();
+    persistAndRender();
+  }
+
+  function editNote(leadId, noteId){
+    const lead = state.leads.find(l => l.id === leadId);
+    const note = lead?.notes?.find(x => x.id === noteId);
+    if(!lead || !note) return;
+    const value = prompt("Redigera anteckning:", note.text);
+    if(value === null) return;
+    note.text = value.trim();
+    lead.updatedAt = nowIso();
+    persistAndRender();
+  }
+
+  function deleteNote(leadId, noteId){
+    const lead = state.leads.find(l => l.id === leadId);
+    if(!lead) return;
+    lead.notes = (lead.notes || []).filter(x => x.id !== noteId);
+    lead.updatedAt = nowIso();
+    persistAndRender();
+  }
+
   function buildMailBody(lead){
-    const latestLog = lead.logs?.[0];
     const latestNote = lead.notes?.[0];
     return [
-      `Organisation: ${lead.organization || "-"}`,
-      `Kontaktperson: ${lead.contactPerson || "-"}`,
-      `Telefon: ${lead.phone || "-"}`,
-      `E-post: ${lead.email || "-"}`,
+      `Kontakt: ${lead.contactPerson || "-"}`,
       "",
-      "Senaste status:",
-      latestLog ? [latestLog.event, latestLog.outcome, latestLog.result].filter(Boolean).join(" / ") : "-",
-      "",
-      "Senaste anteckning:",
+      "Anteckning:",
       latestNote ? latestNote.text : "-",
     ].join("\n");
   }
@@ -474,9 +568,10 @@
     const sec = t.remainingSec % 60;
     els.timerValue.textContent = `${String(min).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
     els.timerFill.style.width = `${Math.max(0, (t.remainingSec / t.durationSec) * 100)}%`;
-    els.timerToggleBtn.textContent = t.running ? "Pausa" : "Starta";
+    els.timerToggleBtn.querySelector("span:last-child").textContent = t.running ? "Pausa" : "Starta";
     els.timerHint.textContent = t.running ? "Pågår nu" : "Fokuspass utan loggning";
-    els.timerPresetBtn.textContent = t.preset === 25 ? "15 min" : "25 min";
+    els.timerPresetBtn.querySelector("span:last-child").textContent = t.preset === 25 ? "15 min" : "25 min";
+    els.timerToggleBtn.querySelector(".btnIcon").textContent = t.running ? "❚❚" : "⏵";
   }
 
   function syncTimerState(){
@@ -499,6 +594,7 @@
       syncTimerState();
       saveState();
       renderTimer();
+      renderDate();
     }, 1000);
   }
 
@@ -509,51 +605,66 @@
     a.href = URL.createObjectURL(blob);
     a.download = name;
     a.click();
-    URL.revokeObjectURL(a.href);
+    setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+  }
+
+  function updateAppendReady(){
+    const hasText = !!els.pasteArea.value.trim();
+    els.appendBtn.classList.toggle("appendReady", hasText);
+  }
+
+  function openAddDirect(){
+    openDataModal();
+    setTimeout(() => els.manualOrg.focus(), 40);
   }
 
   function roulettePick(){
+    if(state.ui.rouletteRunning) return;
     const candidates = state.leads.filter(lead => getLeadStatus(lead).key !== "success");
     if(!candidates.length){
       toast("Inga kandidater kvar utan success.");
       return;
     }
 
-    const visibleCards = [...els.leadList.querySelectorAll(".leadCard")];
-    if(!visibleCards.length) return;
-
+    state.ui.rouletteRunning = true;
     state.ui.surpriseLeadId = null;
     saveState();
     renderLeads();
 
-    let steps = 10 + Math.floor(Math.random() * 10);
-    let index = 0;
     const shuffled = candidates.slice().sort(() => Math.random() - 0.5);
-    const sequence = [];
-    while(sequence.length < steps){
+    let sequence = [];
+    const totalSteps = 14 + Math.floor(Math.random() * 8);
+    while(sequence.length < totalSteps){
       sequence.push(shuffled[sequence.length % shuffled.length].id);
     }
     const finalLeadId = sequence[sequence.length - 1];
+    let index = 0;
 
-    const interval = setInterval(() => {
+    const tick = () => {
       const id = sequence[index];
-      const cards = [...els.leadList.querySelectorAll(".leadCard")];
-      cards.forEach(card => card.classList.remove("surprise","roulette"));
-      const active = els.leadList.querySelector(`.leadCard[data-id="${CSS.escape(id)}"]`);
+      state.ui.surpriseLeadId = id;
+      saveState();
+      renderLeads();
+
+      const active = els.leadList.querySelector(`.leadCard[data-id="${id}"]`);
       if(active){
-        active.classList.add("roulette");
-        active.scrollIntoView({ behavior:"smooth", block:"center" });
+        active.scrollIntoView({ behavior:"smooth", block:"nearest", inline:"nearest" });
       }
+
       index += 1;
-      if(index >= sequence.length){
-        clearInterval(interval);
+      if(index < sequence.length){
+        const remaining = sequence.length - index;
+        const delay = 70 + (sequence.length - remaining) * 10;
+        setTimeout(tick, Math.min(delay, 220));
+      } else {
         state.ui.surpriseLeadId = finalLeadId;
+        state.ui.rouletteRunning = false;
         saveState();
         renderLeads();
-        const finalCard = els.leadList.querySelector(`.leadCard[data-id="${CSS.escape(finalLeadId)}"]`);
-        if(finalCard) finalCard.scrollIntoView({ behavior:"smooth", block:"center" });
       }
-    }, 110);
+    };
+
+    tick();
   }
 
   function renderAll(){
@@ -561,8 +672,8 @@
     renderStats();
     renderTasks();
     renderLeads();
-    renderFlow();
     renderTimer();
+    updateAppendReady();
     if(state.ui.activeLeadId) renderModal();
   }
 
@@ -605,6 +716,13 @@
     persistAndRender();
   });
 
+  els.dataBtn.addEventListener("click", openDataModal);
+  els.addLeadBtn.addEventListener("click", openAddDirect);
+  els.closeDataModalBtn.addEventListener("click", closeDataModal);
+  els.dataOverlay.addEventListener("click", (e) => {
+    if(e.target === els.dataOverlay) closeDataModal();
+  });
+
   els.copyTemplateBtn.addEventListener("click", async () => {
     try{
       await navigator.clipboard.writeText(TEMPLATE);
@@ -613,6 +731,8 @@
       toast("Kunde inte kopiera mall.");
     }
   });
+
+  els.pasteArea.addEventListener("input", updateAppendReady);
 
   els.replaceBtn.addEventListener("click", () => {
     const leads = parseExcelText(els.pasteArea.value);
@@ -631,6 +751,20 @@
     els.pasteArea.value = "";
     persistAndRender();
     toast("Rader tillagda.");
+  });
+
+  els.demoBtn.addEventListener("click", () => {
+    const demo = demoLeads.map(row => buildLead({
+      organization: row[0],
+      contactPerson: row[1],
+      phone: row[2],
+      email: row[3],
+      vnr: row[4],
+      note: row[5],
+    }));
+    state.leads = demo;
+    persistAndRender();
+    toast("Demo laddad.");
   });
 
   els.exportBtn.addEventListener("click", exportJson);
@@ -660,9 +794,22 @@
     e.target.value = "";
   });
 
-  els.toggleSuccessBtn.addEventListener("click", () => {
-    state.hideSuccess = !state.hideSuccess;
+  els.saveManualBtn.addEventListener("click", () => {
+    const lead = buildLead({
+      organization: els.manualOrg.value,
+      contactPerson: els.manualContact.value,
+      phone: els.manualPhone.value,
+      email: els.manualEmail.value,
+      vnr: els.manualVnr.value,
+      note: els.manualNote.value,
+    });
+
+    if(!lead.organization && !lead.contactPerson) return toast("Fyll i åtminstone organisation eller kontaktperson.");
+
+    state.leads.unshift(lead);
+    [els.manualOrg, els.manualContact, els.manualPhone, els.manualEmail, els.manualVnr, els.manualNote].forEach(el => el.value = "");
     persistAndRender();
+    toast("Kort sparat.");
   });
 
   els.surpriseBtn.addEventListener("click", roulettePick);
@@ -784,17 +931,6 @@
     if(!addNote(lead, els.noteInput.value)) return toast("Skriv en anteckning först.");
     els.noteInput.value = "";
     persistAndRender();
-  });
-
-  els.flowBtn.addEventListener("click", () => {
-    const lead = getActiveLead();
-    if(!lead) return;
-    const text = els.noteInput.value.trim();
-    if(!text) return toast("Skriv något först.");
-    state.flowText = text;
-    saveState();
-    renderFlow();
-    toast("Flödestext uppdaterad.");
   });
 
   setInterval(renderDate, 1000 * 30);
