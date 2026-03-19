@@ -50,8 +50,10 @@
     closeModalBtn: $("closeModalBtn"),
     modalTitle: $("modalTitle"),
     modalMeta: $("modalMeta"),
-    modalPhone: $("modalPhone"),
-    modalEmail: $("modalEmail"),
+    modalPhoneInput: $("modalPhoneInput"),
+modalEmailInput: $("modalEmailInput"),
+savePhoneBtn: $("savePhoneBtn"),
+saveEmailBtn: $("saveEmailBtn"),
     modalVnrInput: $("modalVnrInput"),
     modalLinkInput: $("modalLinkInput"),
     copyPhoneBtn: $("copyPhoneBtn"),
@@ -573,8 +575,8 @@
     const status = getLeadStatus(lead);
     els.modalTitle.textContent = lead.organization || "Namnlös";
     els.modalMeta.textContent = `${lead.contactPerson || "Kontakt saknas"} • ${status.label}${lead.prospected ? " • Prospekterad" : ""}`;
-    els.modalPhone.textContent = lead.phone || "-";
-    els.modalEmail.textContent = lead.email || "-";
+    els.modalPhoneInput.value = lead.phone || "";
+els.modalEmailInput.value = lead.email || "";
     els.modalVnrInput.value = lead.vnr || "";
     els.modalLinkInput.value = lead.link || "";
     els.crmMailBtn.disabled = !lead.vnr;
@@ -1218,6 +1220,24 @@
     persistAndRender();
     toast("Länk sparad.");
   });
+
+  els.savePhoneBtn.addEventListener("click", () => {
+  const lead = getActiveLead();
+  if(!lead) return;
+  lead.phone = els.modalPhoneInput.value.trim();
+  lead.updatedAt = nowIso();
+  persistAndRender();
+  toast("Telefon sparad.");
+});
+
+els.saveEmailBtn.addEventListener("click", () => {
+  const lead = getActiveLead();
+  if(!lead) return;
+  lead.email = els.modalEmailInput.value.trim();
+  lead.updatedAt = nowIso();
+  persistAndRender();
+  toast("E-post sparad.");
+});
 
   els.openLinkBtn.addEventListener("click", () => {
     const lead = getActiveLead();
