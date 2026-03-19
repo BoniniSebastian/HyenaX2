@@ -994,3 +994,61 @@ button{cursor:pointer}
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(34,211,238,.28);
 }
+
+
+/* ==== HyenaX2 v6 additions ==== */
+.blob{
+  left:-12vw;
+  top:2vh;
+  width:min(74vw,980px);
+  height:min(58vw,760px);
+  background:
+    radial-gradient(circle at 22% 30%, rgba(34,211,238,.36), transparent 25%),
+    radial-gradient(circle at 62% 42%, rgba(56,189,248,.24), transparent 28%),
+    radial-gradient(circle at 72% 64%, rgba(255,122,0,.18), transparent 24%),
+    radial-gradient(circle at 42% 54%, rgba(232,121,249,.12), transparent 26%),
+    radial-gradient(circle at 46% 50%, rgba(0,0,0,.16), transparent 44%);
+  filter:blur(62px) saturate(135%);
+  opacity:.96;
+}
+.statsPanel{min-height:104px;padding:10px 12px}
+.timerPanel{min-height:104px;padding:10px 12px}
+.timerValue{font-size:24px}
+.utilityBar .fixedBtn{min-width:132px}
+.actionBtn.small{min-height:30px;padding:7px 9px;font-size:11px}
+.fixedMiniBtn{min-width:74px}
+.modalGrid:first-of-type{grid-template-columns:1.22fr .78fr}
+.infoRow{grid-template-columns:88px minmax(0,1fr) auto;gap:8px}
+.infoLabel{font-size:11px}
+.inlineField{font-size:13px;padding:10px 11px}
+.backupMetaLine{padding:0 4px;color:var(--muted2);font-size:12px}
+.leadHeadLeft{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.filterChips{display:flex;gap:8px;align-items:center}
+.filterBtn.active{background:rgba(34,211,238,.18);border-color:rgba(34,211,238,.32);color:#fff}
+.taskPreviewPanel{padding:12px 14px;max-width:760px}
+.taskPreviewText{font-size:13px;color:var(--muted);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contactLine{font-size:12px}
+.previewLine{margin-top:10px;font-size:12px;height:34px}
+.cardLink{font-size:11px}
+.cardMetaMini{margin-top:6px;font-size:11px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toolbarTopActions{margin-bottom:10px}
+.backupStamp{margin-bottom:12px}
+.analysisGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.analysisCol{padding:12px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.analysisCol h4{margin:0 0 8px;font-size:14px}
+.analysisSummary{font-size:12px;color:var(--muted);margin-bottom:10px}
+.analysisItem{padding:10px 0;border-top:1px solid rgba(255,255,255,.06)}
+.analysisItem:first-child{border-top:none;padding-top:0}
+.analysisName{font-size:13px;font-weight:700}
+.analysisMeta{font-size:11px;color:var(--muted2);margin-top:4px;line-height:1.4}
+@media (max-width:980px){
+  .modalGrid:first-of-type{grid-template-columns:1fr}
+  .analysisGrid{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .utilityBar{grid-template-columns:1fr 1fr}
+  .taskPreviewPanel{max-width:none}
+  .backupMetaLine{padding:0}
+  .modalGrid:first-of-type{grid-template-columns:1fr}
+  .leadHeadLeft{align-items:flex-start;flex-direction:column;gap:8px}
+}
