@@ -137,22 +137,29 @@
               </div>
             </div>
 
-            <div class="infoRow">
-              <div class="infoLabel">Telefon</div>
-              <div class="infoValue" id="modalPhone">-</div>
-              <button class="actionBtn small fixedMiniBtn" id="copyPhoneBtn" type="button"><span>Kopiera</span></button>
-            </div>
+           <div class="infoRow">
+  <div class="infoLabel">Telefon</div>
+  <input class="field inlineField" id="modalPhoneInput" type="text" placeholder="Lägg till telefon" />
+  <div class="toolbar wrap">
+    <button class="actionBtn small fixedMiniBtn" id="savePhoneBtn" type="button"><span>Spara</span></button>
+    <button class="actionBtn small fixedMiniBtn ghost" id="copyPhoneBtn" type="button"><span>Kopiera</span></button>
+  </div>
+</div>
 
-            <div class="infoRow">
-              <div class="infoLabel">E-post</div>
-              <div class="infoValue" id="modalEmail">-</div>
-              <button class="actionBtn small fixedMiniBtn" id="copyEmailBtn" type="button"><span>Kopiera</span></button>
-            </div>
+<div class="infoRow">
+  <div class="infoLabel">E-post</div>
+  <input class="field inlineField" id="modalEmailInput" type="text" placeholder="Lägg till e-post" />
+  <div class="toolbar wrap">
+    <button class="actionBtn small fixedMiniBtn" id="saveEmailBtn" type="button"><span>Spara</span></button>
+    <button class="actionBtn small fixedMiniBtn ghost" id="copyEmailBtn" type="button"><span>Kopiera</span></button>
+  </div>
+</div>
 
             <div class="infoRow">
               <div class="infoLabel">VNR</div>
               <input class="field inlineField" id="modalVnrInput" type="text" placeholder="Lägg till VNR" />
               <button class="actionBtn small fixedMiniBtn" id="saveVnrBtn" type="button"><span>Spara</span></button>
+            </div>
             </div>
 
             <div class="infoRow">
@@ -160,6 +167,7 @@
               <input class="field inlineField" id="modalLinkInput" type="text" placeholder="https://..." />
               <button class="actionBtn small fixedMiniBtn" id="saveLinkBtn" type="button"><span>Spara</span></button>
             </div>
+        </div>
 
             <div class="toolbar wrap">
               <button class="actionBtn fixedBtn" id="openLinkBtn" type="button">
