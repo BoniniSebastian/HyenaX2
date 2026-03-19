@@ -1,15 +1,22 @@
-
 (() => {
-  const STORAGE_KEY = "hyenax2_v3_state";
-  const TEMPLATE = ["Organisation","Kontaktperson","Telefon","E-post","VNR","Anteckning"].join("\t");
+  const STORAGE_KEY = "hyenax2_v4_state";
+  const TEMPLATE = ["Organisation","Kontaktperson","Telefon","E-post","VNR","Prospekterad","Länk","Anteckning"].join("\t");
+  const QUOTES = [
+    "10 av 10 samtal du inte ringer genererar 0 affärer",
+    "Nästa samtal kan vara det viktigaste du gjort i år",
+    "100% av alla besvarade samtal har initierats av att du lyfte lur",
+    "A real champion is not defined by their wins, but how they recover a fall",
+    "Sometimes you loose and sometimes you win",
+    "En vinnare är inte den som aldrig förlorar, det är den som aldrig ger upp"
+  ];
 
   const demoLeads = [
-    ["Sävsjö", "Erik", "0704662700", "erik@mail.se", "12345", "Ville bli återkopplad nästa vecka"],
-    ["Lomma", "Lisa", "0735123456", "lisa@mail.se", "", "Testar ny kartläggning"],
-    ["Värmdö", "Anna", "0707001122", "anna@mail.se", "77881", "Prio efter lunch"],
-    ["Nacka", "Johan", "0720008899", "johan@mail.se", "99887", "Har svarat tidigare"],
-    ["Täby", "Maria", "0701239090", "maria@mail.se", "", "Ring igen torsdag"],
-    ["Sollentuna", "Per", "0704400011", "per@mail.se", "55442", "Intresserad av demo"],
+    ["Sävsjö", "Erik", "0704662700", "erik@mail.se", "12345", "Ja", "https://example.com", "Ville bli återkopplad nästa vecka"],
+    ["Lomma", "Lisa", "0735123456", "lisa@mail.se", "", "Nej", "", "Testar ny kartläggning"],
+    ["Värmdö", "Anna", "0707001122", "anna@mail.se", "77881", "Ja", "https://openai.com", "Prio efter lunch"],
+    ["Nacka", "Johan", "0720008899", "johan@mail.se", "99887", "Nej", "", "Har svarat tidigare"],
+    ["Täby", "Maria", "0701239090", "maria@mail.se", "", "Ja", "", "Ring igen torsdag"],
+    ["Sollentuna", "Per", "0704400011", "per@mail.se", "55442", "Nej", "", "Intresserad av demo"]
   ];
 
   const $ = (id) => document.getElementById(id);
@@ -30,6 +37,7 @@
     timerPresetBtn: $("timerPresetBtn"),
     addLeadBtn: $("addLeadBtn"),
     surpriseBtn: $("surpriseBtn"),
+    quoteBtn: $("quoteBtn"),
     dataBtn: $("dataBtn"),
     copyTemplateBtn: $("copyTemplateBtn"),
     taskInput: $("taskInput"),
@@ -37,19 +45,25 @@
     taskList: $("taskList"),
     leadList: $("leadList"),
     leadCount: $("leadCount"),
+
     overlay: $("overlay"),
     closeModalBtn: $("closeModalBtn"),
     modalTitle: $("modalTitle"),
     modalMeta: $("modalMeta"),
     modalPhone: $("modalPhone"),
     modalEmail: $("modalEmail"),
-    modalVnr: $("modalVnr"),
+    modalVnrInput: $("modalVnrInput"),
+    modalLinkInput: $("modalLinkInput"),
     copyPhoneBtn: $("copyPhoneBtn"),
     copyEmailBtn: $("copyEmailBtn"),
-    copyVnrBtn: $("copyVnrBtn"),
     normalMailBtn: $("normalMailBtn"),
     crmMailBtn: $("crmMailBtn"),
     markBtn: $("markBtn"),
+    prospectedBtn: $("prospectedBtn"),
+    saveVnrBtn: $("saveVnrBtn"),
+    saveLinkBtn: $("saveLinkBtn"),
+    openLinkBtn: $("openLinkBtn"),
+    copyLinkBtn: $("copyLinkBtn"),
     logCallBtn: $("logCallBtn"),
     answerFlow: $("answerFlow"),
     resultFlow: $("resultFlow"),
@@ -62,6 +76,8 @@
     logList: $("logList"),
     noteList: $("noteList"),
     attemptsText: $("attemptsText"),
+    meetingNotesBtn: $("meetingNotesBtn"),
+
     dataOverlay: $("dataOverlay"),
     closeDataModalBtn: $("closeDataModalBtn"),
     pasteArea: $("pasteArea"),
@@ -76,10 +92,45 @@
     manualPhone: $("manualPhone"),
     manualEmail: $("manualEmail"),
     manualVnr: $("manualVnr"),
+    manualLink: $("manualLink"),
+    manualProspected: $("manualProspected"),
     manualNote: $("manualNote"),
     saveManualBtn: $("saveManualBtn"),
+
+    quoteOverlay: $("quoteOverlay"),
+    closeQuoteModalBtn: $("closeQuoteModalBtn"),
+    quoteText: $("quoteText"),
+    newQuoteBtn: $("newQuoteBtn"),
+
+    meetingOverlay: $("meetingOverlay"),
+    closeMeetingModalBtn: $("closeMeetingModalBtn"),
+    meetingMolnForvaltning: $("meetingMolnForvaltning"),
+    meetingMolnSkola: $("meetingMolnSkola"),
+    meetingElevregister: $("meetingElevregister"),
+    meetingLarplattform: $("meetingLarplattform"),
+    meetingIdp: $("meetingIdp"),
+    meetingSynkar: $("meetingSynkar"),
+    meetingIntegrationer: $("meetingIntegrationer"),
+    meetingLicens: $("meetingLicens"),
+    meetingUpphandling: $("meetingUpphandling"),
+    meetingNotes: $("meetingNotes"),
+    saveMeetingBtn: $("saveMeetingBtn"),
+
     toastWrap: $("toastWrap"),
   };
+
+  const defaultMeetingNotes = () => ({
+    molnForvaltning: "",
+    molnSkola: "",
+    elevregister: "",
+    larplattform: "",
+    idp: "",
+    synkar: "",
+    integrationer: "",
+    licens: "",
+    upphandling: "",
+    notes: "",
+  });
 
   const defaultState = () => ({
     leads: [],
@@ -112,22 +163,77 @@
   let timerInterval = null;
   let pendingCallLeadId = null;
 
+  function normalizeUrl(url=""){
+    const trimmed = url.trim();
+    if(!trimmed) return "";
+    if(/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  }
+
+  function parseBool(value){
+    const v = String(value || "").trim().toLowerCase();
+    return ["ja","yes","true","1","x"].includes(v);
+  }
+
   function loadState(){
     try{
       const raw = localStorage.getItem(STORAGE_KEY);
       if(!raw) return defaultState();
       const parsed = JSON.parse(raw);
-      return {
+      const loaded = {
         ...defaultState(),
         ...parsed,
         ui: { ...defaultState().ui, ...(parsed.ui || {}) },
         timer: { ...defaultState().timer, ...(parsed.timer || {}) },
-        leads: Array.isArray(parsed.leads) ? parsed.leads : [],
+        leads: Array.isArray(parsed.leads) ? parsed.leads.map(ensureLeadShape) : [],
         tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
       };
+      return loaded;
     }catch{
       return defaultState();
     }
+  }
+
+  function ensureLeadShape(lead){
+    return {
+      id: lead.id || uid(),
+      organization: lead.organization || "",
+      contactPerson: lead.contactPerson || "",
+      phone: lead.phone || "",
+      email: lead.email || "",
+      vnr: lead.vnr || "",
+      link: lead.link || "",
+      prospected: !!lead.prospected,
+      seedNote: lead.seedNote || "",
+      createdAt: lead.createdAt || nowIso(),
+      updatedAt: lead.updatedAt || lead.createdAt || nowIso(),
+      marked: !!lead.marked,
+      logs: Array.isArray(lead.logs) ? lead.logs : [],
+      notes: Array.isArray(lead.notes) ? lead.notes : [],
+      meetingNotes: { ...defaultMeetingNotes(), ...(lead.meetingNotes || {}) },
+    };
+  }
+
+  function buildLead({ organization="", contactPerson="", phone="", email="", vnr="", note="", prospected=false, link="" }){
+    const createdAt = nowIso();
+    const cleanedNote = note.trim();
+    return {
+      id: uid(),
+      organization: organization.trim(),
+      contactPerson: contactPerson.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      vnr: vnr.trim(),
+      link: normalizeUrl(link),
+      prospected: !!prospected,
+      seedNote: cleanedNote,
+      createdAt,
+      updatedAt: createdAt,
+      marked: false,
+      logs: [],
+      notes: cleanedNote ? [{ id: uid(), text: cleanedNote, createdAt }] : [],
+      meetingNotes: defaultMeetingNotes(),
+    };
   }
 
   function saveState(){
@@ -155,6 +261,40 @@
     return String(str).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
   }
 
+  function parseExcelText(text){
+    const rows = text.split(/\r?\n/).map(r => r.trimEnd()).filter(Boolean).map(r => r.split("\t"));
+    if(!rows.length) return [];
+
+    const first = rows[0].map(v => String(v || "").trim().toLowerCase());
+    const expected = ["organisation","kontaktperson","telefon","e-post","vnr","prospekterad","länk","anteckning"];
+    const hasHeader = expected.every((v, i) => (first[i] || "") === v);
+    const data = hasHeader ? rows.slice(1) : rows;
+
+    return data
+      .filter(cols => cols.some(cell => String(cell).trim() !== ""))
+      .map(cols => buildLead({
+        organization: (cols[0] || "").trim(),
+        contactPerson: (cols[1] || "").trim(),
+        phone: (cols[2] || "").trim(),
+        email: (cols[3] || "").trim(),
+        vnr: (cols[4] || "").trim(),
+        prospected: parseBool(cols[5] || ""),
+        link: (cols[6] || "").trim(),
+        note: (cols[7] || "").trim(),
+      }))
+      .filter(item => item.organization || item.contactPerson || item.phone || item.email || item.vnr || item.link);
+  }
+
+  function copy(text, label){
+    if(!text){
+      toast(`Ingen ${label.toLowerCase()} att kopiera.`);
+      return;
+    }
+    navigator.clipboard.writeText(text)
+      .then(() => toast(`${label} kopierad.`))
+      .catch(() => toast(`Kunde inte kopiera ${label.toLowerCase()}.`));
+  }
+
   function getLeadStatus(lead){
     const latest = lead.logs?.[0];
     if(!latest) return { key:"neutral", label:"Ej ringd" };
@@ -177,57 +317,6 @@
       return { text: lead.seedNote, time: lead.createdAt };
     }
     return { text: "Ingen aktivitet ännu", time: null };
-  }
-
-  function parseExcelText(text){
-    const rows = text.split(/\r?\n/).map(r => r.trimEnd()).filter(Boolean).map(r => r.split("\t"));
-    if(!rows.length) return [];
-
-    const first = rows[0].map(v => String(v || "").trim().toLowerCase());
-    const expected = ["organisation","kontaktperson","telefon","e-post","vnr","anteckning"];
-    const hasHeader = expected.every((v, i) => (first[i] || "") === v);
-    const data = hasHeader ? rows.slice(1) : rows;
-
-    return data
-      .filter(cols => cols.some(cell => String(cell).trim() !== ""))
-      .map(cols => buildLead({
-        organization: (cols[0] || "").trim(),
-        contactPerson: (cols[1] || "").trim(),
-        phone: (cols[2] || "").trim(),
-        email: (cols[3] || "").trim(),
-        vnr: (cols[4] || "").trim(),
-        note: (cols[5] || "").trim(),
-      }))
-      .filter(item => item.organization || item.contactPerson || item.phone || item.email || item.vnr);
-  }
-
-  function buildLead({ organization="", contactPerson="", phone="", email="", vnr="", note="" }){
-    const createdAt = nowIso();
-    const cleanedNote = note.trim();
-    return {
-      id: uid(),
-      organization: organization.trim(),
-      contactPerson: contactPerson.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      vnr: vnr.trim(),
-      seedNote: cleanedNote,
-      createdAt,
-      updatedAt: createdAt,
-      marked: false,
-      logs: [],
-      notes: cleanedNote ? [{ id: uid(), text: cleanedNote, createdAt }] : [],
-    };
-  }
-
-  function copy(text, label){
-    if(!text){
-      toast(`Ingen ${label.toLowerCase()} att kopiera.`);
-      return;
-    }
-    navigator.clipboard.writeText(text)
-      .then(() => toast(`${label} kopierad.`))
-      .catch(() => toast(`Kunde inte kopiera ${label.toLowerCase()}.`));
   }
 
   function renderDate(){
@@ -298,10 +387,9 @@
   function buildCard(lead){
     const status = getLeadStatus(lead);
     const preview = getPreview(lead);
-    const attempts = (lead.logs || []).filter(l => l.event === "Ringt").length;
 
     const article = document.createElement("article");
-    article.className = `leadCard ${status.key === "success" ? "success" : ""} ${lead.marked ? "marked" : ""} ${state.ui.surpriseLeadId === lead.id ? "surprise" : ""}`;
+    article.className = `leadCard ${status.key === "success" ? "success" : ""} ${lead.marked ? "marked" : ""} ${lead.prospected ? "prospected" : ""} ${state.ui.surpriseLeadId === lead.id ? "surprise" : ""}`;
     article.dataset.id = lead.id;
     article.innerHTML = `
       <div class="leadGlow"></div>
@@ -319,18 +407,22 @@
       </div>
 
       <div class="previewLine">${escapeHtml(preview.text)}</div>
+      ${lead.link ? `<a class="cardLink" href="${escapeHtml(lead.link)}" target="_blank" rel="noopener noreferrer" data-link="${lead.id}">🔗 Öppna länk</a>` : ""}
 
       <div class="leadBottom">
         <div class="timeLine">${preview.time ? escapeHtml(fmtShort(preview.time)) : "-"}</div>
         <div class="sideMeta">
-          <div class="stateBadge ${status.key}">${escapeHtml(status.label)}</div>
-          <div class="timeLine">${attempts} försök</div>
+          <div class="metaRow">
+            <div class="stateBadge ${status.key}">${escapeHtml(status.label)}</div>
+            ${lead.prospected ? `<div class="microBadge prospected">Prospekterad</div>` : ""}
+          </div>
+          <div class="timeLine">${(lead.logs || []).filter(l => l.event === "Ringt").length} försök</div>
         </div>
       </div>
     `;
 
     article.addEventListener("click", (e) => {
-      if(e.target.closest("[data-lamp]")) return;
+      if(e.target.closest("[data-lamp]") || e.target.closest("[data-link]")) return;
       openLead(lead.id);
     });
 
@@ -339,17 +431,21 @@
       toggleLamp(lead.id);
     });
 
+    const linkEl = article.querySelector("[data-link]");
+    if(linkEl){
+      linkEl.addEventListener("click", (e) => e.stopPropagation());
+    }
+
     return article;
   }
 
   function renderLeads(){
-    const visible = [...state.leads]
-      .sort((a,b) => {
-        const aSuccess = getLeadStatus(a).key === "success" ? 1 : 0;
-        const bSuccess = getLeadStatus(b).key === "success" ? 1 : 0;
-        if(aSuccess !== bSuccess) return aSuccess - bSuccess;
-        return new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt);
-      });
+    const visible = [...state.leads].sort((a,b) => {
+      const aSuccess = getLeadStatus(a).key === "success" ? 1 : 0;
+      const bSuccess = getLeadStatus(b).key === "success" ? 1 : 0;
+      if(aSuccess !== bSuccess) return aSuccess - bSuccess;
+      return new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt);
+    });
 
     els.leadList.innerHTML = "";
     if(!visible.length){
@@ -391,6 +487,36 @@
     els.dataOverlay.classList.remove("open");
   }
 
+  function openQuoteModal(){
+    els.quoteOverlay.classList.add("open");
+    setRandomQuote();
+  }
+
+  function closeQuoteModal(){
+    els.quoteOverlay.classList.remove("open");
+  }
+
+  function openMeetingModal(){
+    const lead = getActiveLead();
+    if(!lead) return;
+    const m = { ...defaultMeetingNotes(), ...(lead.meetingNotes || {}) };
+    els.meetingMolnForvaltning.value = m.molnForvaltning || "";
+    els.meetingMolnSkola.value = m.molnSkola || "";
+    els.meetingElevregister.value = m.elevregister || "";
+    els.meetingLarplattform.value = m.larplattform || "";
+    els.meetingIdp.value = m.idp || "";
+    els.meetingSynkar.value = m.synkar || "";
+    els.meetingIntegrationer.value = m.integrationer || "";
+    els.meetingLicens.value = m.licens || "";
+    els.meetingUpphandling.value = m.upphandling || "";
+    els.meetingNotes.value = m.notes || "";
+    els.meetingOverlay.classList.add("open");
+  }
+
+  function closeMeetingModal(){
+    els.meetingOverlay.classList.remove("open");
+  }
+
   function renderModal(){
     const lead = getActiveLead();
     if(!lead){
@@ -400,14 +526,18 @@
 
     const status = getLeadStatus(lead);
     els.modalTitle.textContent = lead.organization || "Namnlös";
-    els.modalMeta.textContent = `${lead.contactPerson || "Kontakt saknas"} • ${status.label}`;
+    els.modalMeta.textContent = `${lead.contactPerson || "Kontakt saknas"} • ${status.label}${lead.prospected ? " • Prospekterad" : ""}`;
     els.modalPhone.textContent = lead.phone || "-";
     els.modalEmail.textContent = lead.email || "-";
-    els.modalVnr.textContent = lead.vnr || "-";
+    els.modalVnrInput.value = lead.vnr || "";
+    els.modalLinkInput.value = lead.link || "";
     els.crmMailBtn.disabled = !lead.vnr;
     els.crmMailBtn.querySelector("span:last-child").textContent = lead.vnr ? "Maila CRM" : "Saknar VNR";
     els.markBtn.className = `actionBtn small fixedMiniBtn ${lead.marked ? "amber" : ""}`;
     els.markBtn.querySelector("span:last-child").textContent = lead.marked ? "Markerad" : "Markera";
+    els.prospectedBtn.className = `actionBtn small fixedMiniBtn ${lead.prospected ? "primary" : ""}`;
+    els.openLinkBtn.disabled = !lead.link;
+    els.copyLinkBtn.disabled = !lead.link;
 
     const attempts = (lead.logs || []).filter(l => l.event === "Ringt").length;
     els.attemptsText.textContent = `${attempts} försök`;
@@ -547,6 +677,25 @@
     persistAndRender();
   }
 
+  function buildMeetingNotesBlock(lead){
+    const m = { ...defaultMeetingNotes(), ...(lead.meetingNotes || {}) };
+    const rows = [
+      ["Moln förvaltning", m.molnForvaltning],
+      ["Moln skola", m.molnSkola],
+      ["Elevregister", m.elevregister],
+      ["Lärplattform", m.larplattform],
+      ["IDP", m.idp],
+      ["Köps synkar idag", m.synkar],
+      ["Antal och vilka integrationer finns", m.integrationer],
+      ["Licensinköp", m.licens],
+      ["Planerad upphandling av", m.upphandling],
+      ["Mötesanteckningar", m.notes],
+    ].filter(([,v]) => String(v || "").trim());
+
+    if(!rows.length) return "";
+    return "\n\nMötesanteckningar:\n" + rows.map(([k,v]) => `${k}: ${v}`).join("\n");
+  }
+
   function buildMailBody(lead){
     const latestNote = lead.notes?.[0];
     return [
@@ -554,7 +703,8 @@
       "",
       "Anteckning:",
       latestNote ? latestNote.text : "-",
-    ].join("\n");
+      buildMeetingNotesBlock(lead)
+    ].join("\n").trim();
   }
 
   function openMail(to, subject, body){
@@ -667,6 +817,11 @@
     tick();
   }
 
+  function setRandomQuote(){
+    const quote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    els.quoteText.textContent = quote;
+  }
+
   function renderAll(){
     renderDate();
     renderStats();
@@ -677,7 +832,7 @@
     if(state.ui.activeLeadId) renderModal();
   }
 
-  // Events
+  // top actions
   els.goalBtn.addEventListener("click", () => {
     const value = prompt("Ange dagens samtalsmål:", String(state.goalCalls || 20));
     if(value === null) return;
@@ -718,10 +873,14 @@
 
   els.dataBtn.addEventListener("click", openDataModal);
   els.addLeadBtn.addEventListener("click", openAddDirect);
+  els.quoteBtn.addEventListener("click", openQuoteModal);
   els.closeDataModalBtn.addEventListener("click", closeDataModal);
-  els.dataOverlay.addEventListener("click", (e) => {
-    if(e.target === els.dataOverlay) closeDataModal();
-  });
+  els.closeQuoteModalBtn.addEventListener("click", closeQuoteModal);
+  els.closeMeetingModalBtn.addEventListener("click", closeMeetingModal);
+  els.quoteOverlay.addEventListener("click", (e) => { if(e.target === els.quoteOverlay) closeQuoteModal(); });
+  els.dataOverlay.addEventListener("click", (e) => { if(e.target === els.dataOverlay) closeDataModal(); });
+  els.meetingOverlay.addEventListener("click", (e) => { if(e.target === els.meetingOverlay) closeMeetingModal(); });
+  els.newQuoteBtn.addEventListener("click", setRandomQuote);
 
   els.copyTemplateBtn.addEventListener("click", async () => {
     try{
@@ -760,7 +919,9 @@
       phone: row[2],
       email: row[3],
       vnr: row[4],
-      note: row[5],
+      prospected: parseBool(row[5]),
+      link: row[6],
+      note: row[7],
     }));
     state.leads = demo;
     persistAndRender();
@@ -782,7 +943,7 @@
         ...parsed,
         ui: { ...defaultState().ui, ...(parsed.ui || {}) },
         timer: { ...defaultState().timer, ...(parsed.timer || {}) },
-        leads: Array.isArray(parsed.leads) ? parsed.leads : [],
+        leads: Array.isArray(parsed.leads) ? parsed.leads.map(ensureLeadShape) : [],
         tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
       };
       saveState();
@@ -801,19 +962,23 @@
       phone: els.manualPhone.value,
       email: els.manualEmail.value,
       vnr: els.manualVnr.value,
+      link: els.manualLink.value,
+      prospected: els.manualProspected.checked,
       note: els.manualNote.value,
     });
 
     if(!lead.organization && !lead.contactPerson) return toast("Fyll i åtminstone organisation eller kontaktperson.");
 
     state.leads.unshift(lead);
-    [els.manualOrg, els.manualContact, els.manualPhone, els.manualEmail, els.manualVnr, els.manualNote].forEach(el => el.value = "");
+    [els.manualOrg, els.manualContact, els.manualPhone, els.manualEmail, els.manualVnr, els.manualLink, els.manualNote].forEach(el => el.value = "");
+    els.manualProspected.checked = false;
     persistAndRender();
     toast("Kort sparat.");
   });
 
   els.surpriseBtn.addEventListener("click", roulettePick);
 
+  // tasks
   els.addTaskBtn.addEventListener("click", () => {
     const text = els.taskInput.value.trim();
     if(!text) return;
@@ -829,6 +994,7 @@
     }
   });
 
+  // ringkort
   els.closeModalBtn.addEventListener("click", closeLead);
   els.overlay.addEventListener("click", (e) => {
     if(e.target === els.overlay) closeLead();
@@ -838,13 +1004,55 @@
     const lead = getActiveLead();
     if(lead) copy(lead.phone, "Telefon");
   });
+
   els.copyEmailBtn.addEventListener("click", () => {
     const lead = getActiveLead();
     if(lead) copy(lead.email, "E-post");
   });
-  els.copyVnrBtn.addEventListener("click", () => {
+
+  els.markBtn.addEventListener("click", () => {
     const lead = getActiveLead();
-    if(lead) copy(lead.vnr, "VNR");
+    if(!lead) return;
+    lead.marked = !lead.marked;
+    lead.updatedAt = nowIso();
+    persistAndRender();
+  });
+
+  els.prospectedBtn.addEventListener("click", () => {
+    const lead = getActiveLead();
+    if(!lead) return;
+    lead.prospected = !lead.prospected;
+    lead.updatedAt = nowIso();
+    persistAndRender();
+  });
+
+  els.saveVnrBtn.addEventListener("click", () => {
+    const lead = getActiveLead();
+    if(!lead) return;
+    lead.vnr = els.modalVnrInput.value.trim();
+    lead.updatedAt = nowIso();
+    persistAndRender();
+    toast("VNR sparad.");
+  });
+
+  els.saveLinkBtn.addEventListener("click", () => {
+    const lead = getActiveLead();
+    if(!lead) return;
+    lead.link = normalizeUrl(els.modalLinkInput.value);
+    lead.updatedAt = nowIso();
+    persistAndRender();
+    toast("Länk sparad.");
+  });
+
+  els.openLinkBtn.addEventListener("click", () => {
+    const lead = getActiveLead();
+    if(!lead?.link) return toast("Ingen länk sparad.");
+    window.open(lead.link, "_blank", "noopener");
+  });
+
+  els.copyLinkBtn.addEventListener("click", () => {
+    const lead = getActiveLead();
+    if(lead) copy(lead.link, "Länk");
   });
 
   els.normalMailBtn.addEventListener("click", () => {
@@ -858,14 +1066,6 @@
     if(!lead) return;
     if(!lead.vnr) return toast("Saknar VNR.");
     openMail(`${lead.vnr}.eventful@severamail.com`, "Kartläggning | Samtal", buildMailBody(lead));
-  });
-
-  els.markBtn.addEventListener("click", () => {
-    const lead = getActiveLead();
-    if(!lead) return;
-    lead.marked = !lead.marked;
-    lead.updatedAt = nowIso();
-    persistAndRender();
   });
 
   els.logCallBtn.addEventListener("click", () => {
@@ -931,6 +1131,29 @@
     if(!addNote(lead, els.noteInput.value)) return toast("Skriv en anteckning först.");
     els.noteInput.value = "";
     persistAndRender();
+  });
+
+  els.meetingNotesBtn.addEventListener("click", openMeetingModal);
+
+  els.saveMeetingBtn.addEventListener("click", () => {
+    const lead = getActiveLead();
+    if(!lead) return;
+    lead.meetingNotes = {
+      molnForvaltning: els.meetingMolnForvaltning.value,
+      molnSkola: els.meetingMolnSkola.value,
+      elevregister: els.meetingElevregister.value,
+      larplattform: els.meetingLarplattform.value.trim(),
+      idp: els.meetingIdp.value.trim(),
+      synkar: els.meetingSynkar.value.trim(),
+      integrationer: els.meetingIntegrationer.value.trim(),
+      licens: els.meetingLicens.value.trim(),
+      upphandling: els.meetingUpphandling.value.trim(),
+      notes: els.meetingNotes.value.trim(),
+    };
+    lead.updatedAt = nowIso();
+    persistAndRender();
+    closeMeetingModal();
+    toast("Mötesanteckningar sparade.");
   });
 
   setInterval(renderDate, 1000 * 30);
