@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#050b12" />
   <title>HyenaX2</title>
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
   <div class="app">
@@ -33,6 +33,7 @@
           <div class="statBlock">
             <div class="statTop">
               <span class="statLabel alt">Svar idag</span>
+              <button class="tinyBtn" id="resetTodayBtn" type="button">Nollställ idag</button>
             </div>
             <div class="statValue alt" id="answersText">0</div>
             <div class="dots" id="answersDots"></div>
@@ -68,7 +69,7 @@
 
       <section class="utilityBar">
         <button class="actionBtn primary fixedBtn" id="addLeadBtn" type="button">
-          <span class="btnIcon">＋</span><span>Addera kort</span>
+          <span class="btnIcon">☰</span><span>Hantera kort</span>
         </button>
 
         <button class="actionBtn fixedBtn" id="surpriseBtn" type="button">
@@ -79,32 +80,38 @@
           <span class="btnIcon">❝</span><span>H-Quote</span>
         </button>
 
-        <button class="actionBtn ghost fixedBtn" id="dataBtn" type="button">
-          <span class="btnIcon">☰</span><span>Data</span>
+        <button class="actionBtn ghost fixedBtn" id="analysisBtn" type="button">
+          <span class="btnIcon">◫</span><span>Analys</span>
         </button>
 
-        <button class="linkBtn" id="copyTemplateBtn" type="button">Kopiera mall</button>
+        <button class="actionBtn ghost fixedBtn" id="openTasksBtn" type="button">
+          <span class="btnIcon">✓</span><span>Tasks</span>
+        </button>
+
+        <button class="actionBtn ghost fixedBtn" id="exportBtnStart" type="button">
+          <span class="btnIcon">↓</span><span>Backup</span>
+        </button>
       </section>
 
-      <section class="taskSection">
+      <section class="taskPreviewPanel panel">
         <div class="sectionHead sectionHeadTasks">
           <h2>Tasks</h2>
-          <div class="subtle">Delmål och små actions</div>
+          <div class="subtle" id="taskPreviewCount">0 öppna</div>
         </div>
-
-        <div class="taskComposer">
-          <input class="field" id="taskInput" type="text" placeholder="Lägg till task eller delmål" />
-          <button class="actionBtn primary fixedBtn taskAddBtn" id="addTaskBtn" type="button">
-            <span class="btnIcon">＋</span><span>Lägg till</span>
-          </button>
-        </div>
-
-        <div class="taskList" id="taskList"></div>
+        <div class="taskPreviewText" id="taskPreviewText">Inga öppna tasks just nu.</div>
       </section>
+
+      <div class="backupMetaLine" id="backupMetaLine">Ingen backup exporterad ännu.</div>
 
       <section class="leadSection">
         <div class="sectionHead sectionHeadLeads">
-          <h2>Startmeny</h2>
+          <div class="leadHeadLeft">
+            <h2>Startmeny</h2>
+            <div class="filterChips">
+              <button class="tinyBtn filterBtn active" id="filterAllBtn" type="button">Alla</button>
+              <button class="tinyBtn filterBtn" id="filterUnprospectedBtn" type="button">Ej prospekterad</button>
+            </div>
+          </div>
           <div class="leadCount" id="leadCount">0 kunder</div>
         </div>
 
@@ -134,6 +141,14 @@
       <button class="actionBtn small fixedMiniBtn" id="prospectedBtn" type="button">
         <span class="btnIcon">◎</span><span>Prospekterad</span>
       </button>
+    </div>
+  </div>
+
+  <div class="infoRow">
+    <div class="infoLabel">Kontakt</div>
+    <input class="field inlineField" id="modalContactInput" type="text" placeholder="Kontaktperson" />
+    <div class="toolbar wrap">
+      <button class="actionBtn small fixedMiniBtn" id="saveContactBtn" type="button"><span>Spara</span></button>
     </div>
   </div>
 
@@ -265,8 +280,8 @@
       <div class="modal dataModal">
         <div class="modalTop">
           <div>
-            <div class="modalTitle">Data</div>
-            <div class="modalMeta">Import, backup och demo</div>
+            <div class="modalTitle">Hantera kort</div>
+            <div class="modalMeta">Import, export, mall och manuellt skapande</div>
           </div>
           <button class="iconBtn" id="closeDataModalBtn" type="button">✕</button>
         </div>
@@ -275,6 +290,11 @@
           <div class="cardTitleRow">
             <h3>Klistra in från Excel</h3>
             <div class="subtle">Organisation, Kontaktperson, Telefon, E-post, VNR, Prospekterad, Länk, Anteckning</div>
+          </div>
+          <div class="toolbar wrap toolbarTopActions">
+            <button class="actionBtn ghost fixedBtn" id="copyTemplateBtn" type="button">
+              <span class="btnIcon">⧉</span><span>Kopiera mall</span>
+            </button>
           </div>
           <textarea id="pasteArea" class="field area dataArea" placeholder="Klistra in från Excel här..."></textarea>
 
@@ -296,6 +316,7 @@
             <h3>Backup</h3>
             <div class="subtle">JSON in/ut</div>
           </div>
+          <div class="subtle backupStamp" id="backupStamp">Ingen backup exporterad ännu.</div>
          <div class="stackButtons">
   <button class="actionBtn fixedBtn" id="exportBtn" type="button">
     <span class="btnIcon">↓</span><span>Exportera backup</span>
@@ -448,9 +469,47 @@
       </div>
     </div>
 
-    <div class="toastWrap" id="toastWrap"></div>
+        <!-- Tasks -->
+    <div class="overlay" id="tasksOverlay">
+      <div class="modal quoteModal">
+        <div class="modalTop">
+          <div>
+            <div class="modalTitle">Tasks</div>
+            <div class="modalMeta">Delmål och actions i en egen vy</div>
+          </div>
+          <button class="iconBtn" id="closeTasksModalBtn" type="button">✕</button>
+        </div>
+        <section class="modalCard">
+          <div class="taskComposer">
+            <input class="field" id="taskInput" type="text" placeholder="Lägg till task eller delmål" />
+            <button class="actionBtn primary fixedBtn taskAddBtn" id="addTaskBtn" type="button">
+              <span class="btnIcon">＋</span><span>Lägg till</span>
+            </button>
+          </div>
+          <div class="taskList" id="taskList"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Analys -->
+    <div class="overlay" id="analysisOverlay">
+      <div class="modal dataModal">
+        <div class="modalTop">
+          <div>
+            <div class="modalTitle">Samtalsanalys</div>
+            <div class="modalMeta">Idag, igår och i förrgår med tider, antal och utfall</div>
+          </div>
+          <button class="iconBtn" id="closeAnalysisModalBtn" type="button">✕</button>
+        </div>
+        <section class="modalCard">
+          <div class="analysisGrid" id="analysisGrid"></div>
+        </section>
+      </div>
+    </div>
+
+<div class="toastWrap" id="toastWrap"></div>
   </div>
 
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
