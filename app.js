@@ -752,7 +752,23 @@ importJsonBtn: $("importJsonBtn"),
   function exportJson(){
   const name = `hyenax2-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
 
-    function exportExcel(){
+  const exportState = {
+    ...state,
+    leads: state.leads.map(lead => ({
+      ...lead,
+      attemptCount: (lead.logs || []).filter(l => l.event === "Ringt").length
+    }))
+  };
+
+  const blob = new Blob([JSON.stringify(exportState, null, 2)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+
+function exportExcel(){
   const headers = [
     "Organisation",
     "Kontaktperson",
@@ -821,27 +837,6 @@ importJsonBtn: $("importJsonBtn"),
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1500);
 }
-
-  const exportState = {
-    ...state,
-    leads: state.leads.map(lead => ({
-      ...lead,
-      attemptCount: (lead.logs || []).filter(l => l.event === "Ringt").length
-    }))
-  };
-
-  const blob = new Blob([JSON.stringify(exportState, null, 2)], { type:"application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-}
-
-  function updateAppendReady(){
-    const hasText = !!els.pasteArea.value.trim();
-    els.appendBtn.classList.toggle("appendReady", hasText);
-  }
 
   function openAddDirect(){
     openDataModal();
