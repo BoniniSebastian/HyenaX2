@@ -84,7 +84,8 @@
     appendBtn: $("appendBtn"),
     replaceBtn: $("replaceBtn"),
     exportBtn: $("exportBtn"),
-    importJsonBtn: $("importJsonBtn"),
+exportExcelBtn: $("exportExcelBtn"),
+importJsonBtn: $("importJsonBtn"),
     jsonFileInput: $("jsonFileInput"),
     demoBtn: $("demoBtn"),
     manualOrg: $("manualOrg"),
@@ -751,6 +752,76 @@
   function exportJson(){
   const name = `hyenax2-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
 
+    function exportExcel(){
+  const headers = [
+    "Organisation",
+    "Kontaktperson",
+    "Telefon",
+    "E-post",
+    "VNR",
+    "Prospekterad",
+    "Länk",
+    "Antal försök",
+    "Senaste status",
+    "Senaste aktivitet",
+    "Senaste anteckning"
+  ];
+
+  const rows = state.leads.map(lead => {
+    const latestLog = lead.logs?.[0];
+    const latestNote = lead.notes?.[0];
+
+    const latestStatus = latestLog
+      ? [latestLog.event, latestLog.outcome, latestLog.result].filter(Boolean).join(" / ")
+      : "Ej ringd";
+
+    const latestActivity = latestNote && (!latestLog || latestNote.createdAt > latestLog.createdAt)
+      ? latestNote.createdAt
+      : latestLog?.createdAt || lead.createdAt || "";
+
+    const latestNoteText = latestNote?.text || lead.seedNote || "";
+
+    const attemptCount = (lead.logs || []).filter(l => l.event === "Ringt").length;
+
+    return [
+      lead.organization || "",
+      lead.contactPerson || "",
+      lead.phone || "",
+      lead.email || "",
+      lead.vnr || "",
+      lead.prospected ? "Ja" : "Nej",
+      lead.link || "",
+      attemptCount,
+      latestStatus,
+      latestActivity ? fmtDateTime(latestActivity) : "",
+      latestNoteText
+    ];
+  });
+
+  const escapeCsv = (value) => {
+    const str = String(value ?? "");
+    if (str.includes('"') || str.includes(";") || str.includes("\n")) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const csv = [
+    headers.map(escapeCsv).join(";"),
+    ...rows.map(row => row.map(escapeCsv).join(";"))
+  ].join("\n");
+
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const name = `hyenax2-export-${new Date().toISOString().replace(/[:.]/g, "-")}.csv`;
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+
   const exportState = {
     ...state,
     leads: state.leads.map(lead => ({
@@ -938,6 +1009,8 @@
   });
 
   els.exportBtn.addEventListener("click", exportJson);
+  
+  els.exportExcelBtn.addEventListener("click", exportExcel);
 
   els.importJsonBtn.addEventListener("click", () => els.jsonFileInput.click());
 
