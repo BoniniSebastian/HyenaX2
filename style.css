@@ -2,7 +2,6 @@
 :root{
   --bg:#050b12;
   --panel:rgba(8,14,22,.72);
-  --panel2:rgba(10,17,26,.86);
   --line:rgba(255,255,255,.09);
   --line2:rgba(255,255,255,.14);
   --text:rgba(255,255,255,.96);
@@ -48,16 +47,16 @@ button{cursor:pointer}
 
 .blob{
   position:fixed;
-  left:-7vw;
-  top:6vh;
-  width:min(58vw,760px);
-  height:min(42vw,560px);
+  left:-6vw;
+  top:7vh;
+  width:min(54vw,740px);
+  height:min(40vw,540px);
   border-radius:42% 58% 64% 36% / 40% 38% 62% 60%;
   background:
-    radial-gradient(circle at 32% 36%, rgba(34,211,238,.26), transparent 24%),
-    radial-gradient(circle at 62% 58%, rgba(56,189,248,.20), transparent 28%),
+    radial-gradient(circle at 32% 36%, rgba(34,211,238,.24), transparent 24%),
+    radial-gradient(circle at 62% 58%, rgba(56,189,248,.18), transparent 28%),
     radial-gradient(circle at 46% 50%, rgba(0,0,0,.18), transparent 40%);
-  filter:blur(52px) saturate(120%);
+  filter:blur(56px) saturate(120%);
   opacity:.82;
   pointer-events:none;
   animation:blobBreathe 14s ease-in-out infinite;
@@ -71,13 +70,13 @@ button{cursor:pointer}
 .shell{
   position:relative;
   z-index:1;
-  width:min(1100px, calc(100vw - 24px));
+  width:min(1180px, calc(100vw - 24px));
   margin:0 auto;
-  padding:calc(14px + var(--safeTop)) 0 calc(16px + var(--safeBottom));
+  padding:calc(12px + var(--safeTop)) 0 calc(16px + var(--safeBottom));
   min-height:100dvh;
   display:flex;
   flex-direction:column;
-  gap:14px;
+  gap:12px;
 }
 
 .topbar{
@@ -95,20 +94,15 @@ button{cursor:pointer}
   text-transform:uppercase;
 }
 .dateBlock{
-  color:rgba(255,255,255,.96);
-  font-weight:800;
-  font-size:22px;
+  color:rgba(255,255,255,.98);
+  font-weight:900;
+  font-size:24px;
   letter-spacing:.01em;
   line-height:1.1;
   text-align:right;
 }
 
-.hero,.workPanels,.modalGrid{
-  display:grid;
-  grid-template-columns:1.1fr .9fr;
-  gap:14px;
-}
-.panel,.modalCard,.flowBar{
+.panel,.modalCard{
   background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.025));
   border:1px solid var(--line);
   border-radius:var(--radius-xl);
@@ -116,45 +110,57 @@ button{cursor:pointer}
   backdrop-filter:blur(22px);
   -webkit-backdrop-filter:blur(22px);
 }
-.progressPanel,.timerPanel,.importPanel,.taskPanel{
-  padding:16px;
+
+.heroCompact{
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:12px;
+  align-items:stretch;
 }
-.progressPanel{
+.statsPanel{
   display:flex;
-  flex-direction:column;
+  align-items:center;
   gap:14px;
+  padding:12px 14px;
+  min-height:116px;
 }
-.metric{
+.statBlock{
+  flex:1;
   display:flex;
   flex-direction:column;
-  gap:8px;
+  gap:6px;
 }
-.metricHead{
+.statDivider{
+  width:1px;
+  align-self:stretch;
+  background:linear-gradient(180deg, transparent, rgba(255,255,255,.12), transparent);
+}
+.statTop{
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:10px;
 }
-.metricLabel{
-  font-size:12px;
+.statLabel{
+  font-size:11px;
   letter-spacing:.08em;
   text-transform:uppercase;
   color:var(--muted);
 }
-.metricLabel.alt{color:rgba(150,225,255,.78)}
-.metricValue{
+.statLabel.alt{color:rgba(150,225,255,.78)}
+.statValue{
   font-size:17px;
   font-weight:800;
   color:rgba(255,255,255,.98);
 }
-.metricValue.alt{color:rgba(150,225,255,.98)}
+.statValue.alt{color:rgba(150,225,255,.98)}
 .dots{
   display:grid;
   grid-template-columns:repeat(20, minmax(0,1fr));
   gap:6px;
 }
 .dot{
-  height:10px;
+  height:9px;
   border-radius:999px;
   background:rgba(255,255,255,.08);
   border:1px solid rgba(255,255,255,.04);
@@ -168,82 +174,41 @@ button{cursor:pointer}
   box-shadow:0 0 12px rgba(56,189,248,.65), 0 0 24px rgba(56,189,248,.18);
 }
 
-.tinyBtn,.btn,.iconBtn{
-  border:none;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.08);
-  color:rgba(255,255,255,.92);
-  transition:.18s ease;
-}
-.tinyBtn{
-  min-height:30px;
-  padding:6px 10px;
-  border-radius:12px;
-  font-size:12px;
-}
-.btn{
-  min-height:40px;
-  padding:10px 12px;
-  border-radius:14px;
-  font-size:13px;
-}
-.btn.small{
-  min-height:34px;
-  padding:8px 10px;
-  border-radius:12px;
-  font-size:12px;
-}
-.btn:hover,.tinyBtn:hover,.iconBtn:hover{
-  background:rgba(255,255,255,.1);
-  transform:translateY(-1px);
-}
-.btn:active,.tinyBtn:active,.iconBtn:active{transform:translateY(0)}
-.btn.primary{
-  background:linear-gradient(180deg, rgba(34,211,238,.18), rgba(34,211,238,.10));
-  border-color:rgba(34,211,238,.28);
-  box-shadow:0 0 18px rgba(34,211,238,.12);
-}
-.btn.orange{
-  background:linear-gradient(180deg, rgba(255,122,0,.2), rgba(255,122,0,.12));
-  border-color:rgba(255,122,0,.28);
-}
-.btn.green{
-  background:linear-gradient(180deg, rgba(52,211,153,.18), rgba(52,211,153,.10));
-  border-color:rgba(52,211,153,.28);
-}
-.btn.amber{
-  background:linear-gradient(180deg, rgba(255,209,102,.18), rgba(255,209,102,.10));
-  border-color:rgba(255,209,102,.28);
-}
-.btn.ghost{background:rgba(255,255,255,.03)}
-.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none!important}
-
 .timerPanel{
+  padding:12px 14px;
+  min-height:116px;
   display:flex;
   flex-direction:column;
-  gap:12px;
+  gap:10px;
+  justify-content:center;
+}
+.timerMeta{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:10px;
 }
 .timerLabel{
-  font-size:12px;
+  font-size:11px;
   text-transform:uppercase;
   letter-spacing:.08em;
   color:var(--muted);
 }
 .timerValue{
   margin-top:2px;
-  font-size:28px;
+  font-size:27px;
   font-weight:900;
   color:rgba(255,255,255,.98);
 }
-.timerHint{
-  margin-top:2px;
+.timerMiniText{
   font-size:12px;
-  color:var(--muted);
+  color:var(--muted2);
+  text-align:right;
 }
 .timerRail{
   position:relative;
   width:100%;
-  height:9px;
+  height:5px;
   padding:0;
   border:none;
   background:rgba(255,255,255,.06);
@@ -260,35 +225,94 @@ button{cursor:pointer}
   box-shadow:0 0 18px rgba(255,122,0,.28);
   transition:width .2s linear;
 }
-.toolbar{
+
+.utilityBar{
   display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  padding:0 2px;
+}
+.linkBtn,.actionBtn,.tinyBtn,.iconBtn{
+  border:none;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+  color:rgba(255,255,255,.92);
+  transition:.18s ease;
+}
+.actionBtn,.tinyBtn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   gap:8px;
-  align-items:center;
 }
-.toolbar.wrap{flex-wrap:wrap}
-
-.flowBar{
-  display:flex;
-  gap:12px;
-  align-items:center;
-  min-height:46px;
-  padding:0 16px;
-}
-.flowTag{
-  font-size:12px;
-  text-transform:uppercase;
-  letter-spacing:.08em;
-  color:var(--muted);
-  white-space:nowrap;
-}
-.flowText{
+.actionBtn{
+  min-height:40px;
+  padding:10px 14px;
+  border-radius:14px;
   font-size:13px;
-  color:rgba(255,255,255,.90);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
 }
+.actionBtn.small{
+  min-height:34px;
+  padding:8px 10px;
+  border-radius:12px;
+  font-size:12px;
+}
+.fixedBtn{
+  min-width:150px;
+}
+.fixedMiniBtn{
+  min-width:90px;
+}
+.taskAddBtn{min-width:132px}
+.linkBtn{
+  background:transparent;
+  border-color:transparent;
+  color:var(--muted);
+  font-size:13px;
+  padding:10px 4px;
+}
+.linkBtn:hover{color:rgba(255,255,255,.92)}
+.btnIcon{
+  font-size:13px;
+  line-height:1;
+  opacity:.95;
+}
+.actionBtn:hover,.tinyBtn:hover,.iconBtn:hover{
+  background:rgba(255,255,255,.1);
+  transform:translateY(-1px);
+}
+.actionBtn:active,.tinyBtn:active,.iconBtn:active{transform:translateY(0)}
+.actionBtn.primary{
+  background:linear-gradient(180deg, rgba(34,211,238,.18), rgba(34,211,238,.10));
+  border-color:rgba(34,211,238,.28);
+  box-shadow:0 0 18px rgba(34,211,238,.12);
+}
+.actionBtn.orange{
+  background:linear-gradient(180deg, rgba(255,122,0,.2), rgba(255,122,0,.12));
+  border-color:rgba(255,122,0,.28);
+}
+.actionBtn.green{
+  background:linear-gradient(180deg, rgba(52,211,153,.18), rgba(52,211,153,.10));
+  border-color:rgba(52,211,153,.28);
+}
+.actionBtn.amber{
+  background:linear-gradient(180deg, rgba(255,209,102,.18), rgba(255,209,102,.10));
+  border-color:rgba(255,209,102,.28);
+}
+.actionBtn.ghost{background:rgba(255,255,255,.03)}
+.actionBtn.appendReady{
+  box-shadow:0 0 18px rgba(34,211,238,.22);
+  border-color:rgba(34,211,238,.36);
+}
+.actionBtn[disabled]{opacity:.45;cursor:not-allowed;transform:none!important}
+.disabledLook{opacity:.72}
 
+.taskSection{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
 .sectionHead{
   display:flex;
   justify-content:space-between;
@@ -303,6 +327,11 @@ button{cursor:pointer}
 .subtle{
   font-size:12px;
   color:var(--muted2);
+}
+.taskComposer{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
 }
 .field{
   width:100%;
@@ -320,25 +349,11 @@ button{cursor:pointer}
   line-height:1.45;
 }
 .smallArea{min-height:94px}
-
-.importPanel,.taskPanel{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  min-height:230px;
-}
-.taskComposer{
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:8px;
-}
-.taskList,.leadList,.historyList{
+.taskList,.historyList{
   display:flex;
   flex-direction:column;
   gap:8px;
-  overflow:auto;
 }
-.taskList{min-height:0}
 .taskItem{
   display:grid;
   grid-template-columns:auto 1fr auto;
@@ -394,19 +409,23 @@ button{cursor:pointer}
   background:rgba(255,255,255,.04);
   border:1px solid rgba(255,255,255,.08);
 }
-.leadList{
+.leadGrid{
   min-height:0;
   flex:1;
+  overflow:auto;
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0,1fr));
+  gap:12px;
   padding:2px 2px 8px;
   scroll-behavior:smooth;
 }
 .leadCard{
   position:relative;
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:12px;
-  align-items:center;
-  padding:14px 15px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  min-height:158px;
+  padding:14px 14px 13px;
   border-radius:22px;
   background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
   border:1px solid rgba(255,255,255,.08);
@@ -420,33 +439,40 @@ button{cursor:pointer}
 }
 .leadCard.success{
   border-color:rgba(52,211,153,.22);
-  box-shadow:0 12px 28px rgba(0,0,0,.22), 0 0 22px rgba(52,211,153,.07);
+  box-shadow:0 12px 28px rgba(0,0,0,.22), 0 0 22px rgba(52,211,153,.08);
+}
+.leadCard.marked{
+  box-shadow:0 12px 28px rgba(0,0,0,.22), 0 0 28px rgba(255,209,102,.14);
 }
 .leadCard.marked::before{
   content:"";
   position:absolute;
-  left:-18px;
-  top:-18px;
-  width:108px;
-  height:108px;
+  inset:-18% -4% auto auto;
+  width:130px;
+  height:130px;
   border-radius:50%;
-  background:radial-gradient(circle, rgba(255,209,102,.18), transparent 66%);
-  filter:blur(10px);
+  background:radial-gradient(circle, rgba(255,209,102,.22), transparent 68%);
+  filter:blur(12px);
   pointer-events:none;
 }
-.leadCard.surprise{
-  box-shadow:0 0 0 1px rgba(34,211,238,.26), 0 0 24px rgba(34,211,238,.18), 0 12px 30px rgba(0,0,0,.25);
+.leadGlow{
+  position:absolute;
+  inset:-20%;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  background:radial-gradient(circle at center, rgba(34,211,238,.18), transparent 42%);
+  filter:blur(18px);
 }
-.leadCard.roulette{
-  animation:roulettePulse .16s linear;
-}
-@keyframes roulettePulse{
-  0%{transform:scale(1)}
-  50%{transform:scale(1.012)}
-  100%{transform:scale(1)}
-}
-.leadMain{min-width:0}
+.leadCard.surprise .leadGlow{opacity:1}
 .leadHead{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.leadInfo{min-width:0}
+.statusRow{
   display:flex;
   align-items:center;
   gap:10px;
@@ -479,35 +505,48 @@ button{cursor:pointer}
   text-overflow:ellipsis;
 }
 .contactLine{
-  margin-top:3px;
+  margin-top:5px;
   font-size:13px;
   color:var(--muted);
-}
-.previewLine{
-  margin-top:10px;
-  font-size:13px;
-  color:rgba(255,255,255,.88);
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.leadSide{
+.previewLine{
+  margin-top:14px;
+  font-size:13px;
+  line-height:1.35;
+  color:rgba(255,255,255,.88);
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  min-height:35px;
+}
+.leadBottom{
   display:flex;
-  flex-direction:column;
+  justify-content:space-between;
   align-items:flex-end;
   gap:10px;
+  margin-top:14px;
 }
 .lampBtn{
   min-width:34px;
   height:34px;
-  padding:0 8px;
+  padding:0 10px;
   border-radius:12px;
 }
 .lampBtn.on{
   color:rgba(255,209,102,.98);
-  background:rgba(255,209,102,.08);
-  border-color:rgba(255,209,102,.20);
-  box-shadow:0 0 14px rgba(255,209,102,.14);
+  background:rgba(255,209,102,.10);
+  border-color:rgba(255,209,102,.24);
+  box-shadow:0 0 18px rgba(255,209,102,.18);
+}
+.sideMeta{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:8px;
 }
 .stateBadge{
   font-size:11px;
@@ -546,6 +585,7 @@ button{cursor:pointer}
   border:1px dashed rgba(255,255,255,.12);
   background:rgba(255,255,255,.03);
   font-size:14px;
+  grid-column:1 / -1;
 }
 
 .overlay{
@@ -562,7 +602,7 @@ button{cursor:pointer}
 }
 .overlay.open{display:flex}
 .modal{
-  width:min(930px, calc(100vw - 20px));
+  width:min(940px, calc(100vw - 20px));
   max-height:min(88dvh, 920px);
   overflow:auto;
   padding:18px;
@@ -574,6 +614,7 @@ button{cursor:pointer}
   flex-direction:column;
   gap:14px;
 }
+.dataModal{width:min(840px, calc(100vw - 20px))}
 .modalTop{
   display:flex;
   justify-content:space-between;
@@ -594,6 +635,11 @@ button{cursor:pointer}
   width:42px;
   height:42px;
   border-radius:14px;
+}
+.modalGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
 }
 .modalCard{
   padding:16px;
@@ -629,6 +675,7 @@ button{cursor:pointer}
 }
 .historyList{
   max-height:290px;
+  overflow:auto;
 }
 .historyItem{
   padding:12px 13px;
@@ -656,6 +703,23 @@ button{cursor:pointer}
   background:rgba(255,255,255,.06);
   border:1px solid rgba(255,255,255,.08);
 }
+.historyActions{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+.stackButtons{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  max-width:260px;
+}
+.manualGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.dataArea{min-height:128px}
 
 .toastWrap{
   position:fixed;
@@ -683,22 +747,29 @@ button{cursor:pointer}
 
 .hidden{display:none!important}
 
+@media (max-width: 1100px){
+  .leadGrid{grid-template-columns:repeat(2, minmax(0,1fr))}
+}
 @media (max-width: 980px){
-  .hero,.workPanels,.modalGrid{grid-template-columns:1fr}
-  .modal{width:min(930px, calc(100vw - 14px)); padding:14px; border-radius:24px}
+  .heroCompact,.modalGrid,.manualGrid{grid-template-columns:1fr}
+  .modal,.dataModal{width:min(940px, calc(100vw - 14px)); padding:14px; border-radius:24px}
 }
 @media (max-width: 640px){
   .shell{width:calc(100vw - 14px);gap:10px;padding-top:calc(10px + var(--safeTop))}
   .dateBlock{font-size:18px}
-  .progressPanel,.timerPanel,.importPanel,.taskPanel,.modalCard{padding:14px}
+  .statsPanel,.timerPanel,.modalCard{padding:14px}
   .taskComposer{grid-template-columns:1fr}
-  .leadCard{padding:13px 13px;border-radius:18px}
+  .leadGrid{grid-template-columns:1fr}
+  .leadCard{min-height:148px; border-radius:18px}
   .previewLine{font-size:12px}
   .modalTitle{font-size:22px}
-  .timerValue{font-size:24px}
-  .toolbar{gap:7px}
-  .btn{font-size:12px; min-height:38px; padding:10px 11px}
+  .timerValue{font-size:23px}
+  .actionBtn{font-size:12px; min-height:38px; padding:10px 11px}
+  .fixedBtn{min-width:unset; flex:1}
+  .utilityBar{display:grid;grid-template-columns:1fr 1fr;align-items:stretch}
+  .linkBtn{grid-column:1 / -1; text-align:left; padding-left:4px}
   .infoRow{grid-template-columns:1fr}
   .historyList{max-height:none}
   .iconBtn{width:38px;height:38px}
+  .stackButtons{max-width:none}
 }
