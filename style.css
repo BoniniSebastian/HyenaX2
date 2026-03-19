@@ -311,6 +311,7 @@ button{cursor:pointer}
   flex-direction:column;
   gap:10px;
   min-height:0;
+  max-width:720px;
 }
 .sectionHead{
   display:flex;
