@@ -850,19 +850,93 @@ button{cursor:pointer}
   .modal,.dataModal,.meetingModal{width:min(940px, calc(100vw - 14px)); padding:14px; border-radius:24px}
 }
 @media (max-width: 640px){
-  .shell{width:calc(100vw - 14px);gap:10px;padding-top:calc(10px + var(--safeTop))}
+  .shell{
+    width:calc(100vw - 14px);
+    gap:10px;
+    padding-top:calc(10px + var(--safeTop));
+  }
+
   .dateBlock{font-size:18px}
-  .statsPanel,.timerPanel,.modalCard{padding:14px}
-  .taskComposer{grid-template-columns:1fr}
-  .leadGrid{grid-template-columns:1fr}
-  .leadCard{min-height:168px; border-radius:18px}
-  .previewLine{font-size:12px}
+
+  .heroCompact{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+
+  .statsPanel,
+  .timerPanel,
+  .modalCard{
+    padding:10px 12px;
+  }
+
+  .statsPanel,
+  .timerPanel{
+    min-height:auto;
+  }
+
+  .taskComposer{
+    grid-template-columns:1fr;
+  }
+
+  .taskList{
+    max-height:120px;
+    overflow:auto;
+  }
+
+  .leadGrid{
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:8px;
+  }
+
+  .leadCard{
+    min-height:148px;
+    border-radius:18px;
+    padding:12px;
+  }
+
+  .orgName{font-size:14px}
+  .contactLine{font-size:12px}
+  .previewLine{
+    font-size:11px;
+    height:32px;
+  }
+
+  .timeLine{font-size:11px}
+  .stateBadge,
+  .microBadge{
+    font-size:10px;
+    padding:6px 7px;
+  }
+
   .modalTitle{font-size:22px}
-  .timerValue{font-size:23px}
-  .actionBtn{font-size:12px; min-height:38px; padding:10px 11px}
-  .fixedBtn{min-width:unset; flex:1}
-  .utilityBar{display:grid;grid-template-columns:1fr 1fr;align-items:stretch}
-  .linkBtn{grid-column:1 / -1; text-align:left; padding-left:4px}
+  .timerValue{font-size:20px}
+
+  .dots{gap:4px}
+  .dot{height:7px}
+
+  .actionBtn{
+    font-size:12px;
+    min-height:38px;
+    padding:10px 11px;
+  }
+
+  .fixedBtn{
+    min-width:unset;
+    flex:1;
+  }
+
+  .utilityBar{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    align-items:stretch;
+  }
+
+  .linkBtn{
+    grid-column:1 / -1;
+    text-align:left;
+    padding-left:4px;
+  }
+
   .infoRow{grid-template-columns:1fr}
   .historyList{max-height:none}
   .iconBtn{width:38px;height:38px}
