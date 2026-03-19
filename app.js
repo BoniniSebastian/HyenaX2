@@ -28,6 +28,7 @@
     callsDots: $("callsDots"),
     answersDots: $("answersDots"),
     goalBtn: $("goalBtn"),
+    resetTodayBtn: $("resetTodayBtn"),
     timerValue: $("timerValue"),
     timerHint: $("timerHint"),
     timerRail: $("timerRail"),
@@ -39,6 +40,12 @@
     surpriseBtn: $("surpriseBtn"),
     quoteBtn: $("quoteBtn"),
     dataBtn: $("dataBtn"),
+    analysisBtn: $("analysisBtn"),
+    exportBtnStart: $("exportBtnStart"),
+    openTasksBtn: $("openTasksBtn"),
+    filterAllBtn: $("filterAllBtn"),
+    filterUnprospectedBtn: $("filterUnprospectedBtn"),
+    backupMetaLine: $("backupMetaLine"),
     copyTemplateBtn: $("copyTemplateBtn"),
     taskInput: $("taskInput"),
     addTaskBtn: $("addTaskBtn"),
@@ -50,10 +57,12 @@
     closeModalBtn: $("closeModalBtn"),
     modalTitle: $("modalTitle"),
     modalMeta: $("modalMeta"),
+    modalContactInput: $("modalContactInput"),
+    saveContactBtn: $("saveContactBtn"),
     modalPhoneInput: $("modalPhoneInput"),
-modalEmailInput: $("modalEmailInput"),
-savePhoneBtn: $("savePhoneBtn"),
-saveEmailBtn: $("saveEmailBtn"),
+    modalEmailInput: $("modalEmailInput"),
+    savePhoneBtn: $("savePhoneBtn"),
+    saveEmailBtn: $("saveEmailBtn"),
     modalVnrInput: $("modalVnrInput"),
     modalLinkInput: $("modalLinkInput"),
     copyPhoneBtn: $("copyPhoneBtn"),
@@ -101,6 +110,14 @@ saveEmailBtn: $("saveEmailBtn"),
     saveManualBtn: $("saveManualBtn"),
 
     quoteOverlay: $("quoteOverlay"),
+    tasksOverlay: $("tasksOverlay"),
+    closeTasksModalBtn: $("closeTasksModalBtn"),
+    analysisOverlay: $("analysisOverlay"),
+    closeAnalysisModalBtn: $("closeAnalysisModalBtn"),
+    analysisGrid: $("analysisGrid"),
+    taskPreviewCount: $("taskPreviewCount"),
+    taskPreviewText: $("taskPreviewText"),
+    backupStamp: $("backupStamp"),
     closeQuoteModalBtn: $("closeQuoteModalBtn"),
     quoteText: $("quoteText"),
     newQuoteBtn: $("newQuoteBtn"),
@@ -143,6 +160,9 @@ saveEmailBtn: $("saveEmailBtn"),
       activeLeadId: null,
       surpriseLeadId: null,
       rouletteRunning: false,
+      filterMode: "all",
+      dayResetByDate: {},
+      lastBackupAt: null,
     },
     timer: {
       durationSec: 25 * 60,
@@ -178,6 +198,10 @@ saveEmailBtn: $("saveEmailBtn"),
     minute: "2-digit"
   });
   const toDay = (iso) => new Date(iso).toLocaleDateString("sv-SE");
+  const ymdOffset = (days=0) => { const d = new Date(); d.setDate(d.getDate()+days); return d.toLocaleDateString("sv-SE"); };
+  const getDayResetTs = (dateKey) => Number(state.ui?.dayResetByDate?.[dateKey] || 0);
+  const getAttemptCount = (lead) => (lead.logs || []).filter(l => l.event === "Ringt").length;
+  const getLatestNoteText = (lead) => (lead.notes || []).map(n => `${fmtDateTime(n.createdAt)} — ${n.text}`).join(" | ");
 
   let state = loadState();
   let timerInterval = null;
@@ -366,12 +390,14 @@ saveEmailBtn: $("saveEmailBtn"),
 
   function renderStats(){
     const today = todayKey();
+    const resetTs = getDayResetTs(today);
     let calls = 0;
     let answers = 0;
 
     state.leads.forEach(lead => {
       (lead.logs || []).forEach(log => {
         if (toDay(log.createdAt) !== today) return;
+        if (new Date(log.createdAt).getTime() < resetTs) return;
         if (log.event === "Ringt") calls += 1;
         if (log.outcome === "Svarade") answers += 1;
       });
@@ -399,6 +425,9 @@ saveEmailBtn: $("saveEmailBtn"),
 
   function renderTasks(){
     els.taskList.innerHTML = "";
+    const openTasks = state.tasks.filter(task => !task.done);
+    els.taskPreviewCount.textContent = `${openTasks.length} öppna`;
+    els.taskPreviewText.textContent = openTasks[0]?.text || "Inga öppna tasks just nu.";
 
     if (!state.tasks.length){
       els.taskList.innerHTML = `<div class="emptyState">Inga tasks ännu.</div>`;
@@ -446,6 +475,7 @@ saveEmailBtn: $("saveEmailBtn"),
             <div class="orgName">${escapeHtml(lead.organization || "Namnlös")}</div>
           </div>
           <div class="contactLine">${escapeHtml(lead.contactPerson || "Kontakt saknas")}</div>
+          <div class="cardMetaMini">${escapeHtml(lead.phone || "")}</div>
         </div>
         <button class="actionBtn small lampBtn ${lead.marked ? "on" : ""}" type="button" data-lamp="${lead.id}">
           <span class="btnIcon">💡</span>
@@ -490,13 +520,19 @@ saveEmailBtn: $("saveEmailBtn"),
       const aSuccess = getLeadStatus(a).key === "success" ? 1 : 0;
       const bSuccess = getLeadStatus(b).key === "success" ? 1 : 0;
       if (aSuccess !== bSuccess) return aSuccess - bSuccess;
+      const aPros = a.prospected ? 1 : 0;
+      const bPros = b.prospected ? 1 : 0;
+      if (aPros !== bPros) return aPros - bPros;
       return new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt);
-    });
+    }).filter(lead => state.ui.filterMode === "unprospected" ? !lead.prospected : true);
+
+    els.filterAllBtn?.classList.toggle("active", state.ui.filterMode === "all");
+    els.filterUnprospectedBtn?.classList.toggle("active", state.ui.filterMode === "unprospected");
 
     els.leadList.innerHTML = "";
 
     if (!visible.length){
-      els.leadList.innerHTML = `<div class="emptyState">Ingen kundlista ännu. Öppna Data eller Addera kort för att komma igång.</div>`;
+      els.leadList.innerHTML = `<div class="emptyState">Ingen kundlista ännu. Öppna Hantera kort för att komma igång.</div>`;
     } else {
       visible.forEach(lead => els.leadList.appendChild(buildCard(lead)));
     }
@@ -575,8 +611,9 @@ saveEmailBtn: $("saveEmailBtn"),
     const status = getLeadStatus(lead);
     els.modalTitle.textContent = lead.organization || "Namnlös";
     els.modalMeta.textContent = `${lead.contactPerson || "Kontakt saknas"} • ${status.label}${lead.prospected ? " • Prospekterad" : ""}`;
+    els.modalContactInput.value = lead.contactPerson || "";
     els.modalPhoneInput.value = lead.phone || "";
-els.modalEmailInput.value = lead.email || "";
+    els.modalEmailInput.value = lead.email || "";
     els.modalVnrInput.value = lead.vnr || "";
     els.modalLinkInput.value = lead.link || "";
     els.crmMailBtn.disabled = !lead.vnr;
@@ -811,6 +848,8 @@ els.modalEmailInput.value = lead.email || "";
   }
 
   function exportJson(){
+    state.ui.lastBackupAt = nowIso();
+    saveState();
     const name = `hyenax2-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
 
     const exportState = {
@@ -830,6 +869,8 @@ els.modalEmailInput.value = lead.email || "";
   }
 
   function exportExcel(){
+    state.ui.lastBackupAt = nowIso();
+    saveState();
     const headers = [
       "Organisation",
       "Kontaktperson",
@@ -966,12 +1007,72 @@ els.modalEmailInput.value = lead.email || "";
     els.quoteText.textContent = quote;
   }
 
+  function renderBackupMeta(){
+    const text = state.ui.lastBackupAt ? `Senaste backup: ${fmtDateTime(state.ui.lastBackupAt)}` : "Ingen backup exporterad ännu.";
+    if (els.backupMetaLine) els.backupMetaLine.textContent = text;
+    if (els.backupStamp) els.backupStamp.textContent = text;
+  }
+
+  function groupLogsByDay(dateKey){
+    const rows = [];
+    state.leads.forEach(lead => {
+      const logs = (lead.logs || []).filter(log => toDay(log.createdAt) === dateKey);
+      if (!logs.length) return;
+      rows.push({ lead, logs });
+    });
+    rows.sort((a,b) => new Date(b.logs[0].createdAt) - new Date(a.logs[0].createdAt));
+    return rows;
+  }
+
+  function renderAnalysis(){
+    if (!els.analysisGrid) return;
+    const days = [
+      { key: ymdOffset(0), label: 'Idag' },
+      { key: ymdOffset(-1), label: 'Igår' },
+      { key: ymdOffset(-2), label: 'Förrgår' },
+    ];
+    els.analysisGrid.innerHTML = days.map(day => {
+      const rows = groupLogsByDay(day.key);
+      const callCount = rows.reduce((sum, row) => sum + row.logs.filter(l => l.event === 'Ringt').length, 0);
+      const answerCount = rows.reduce((sum, row) => sum + row.logs.filter(l => l.outcome === 'Svarade').length, 0);
+      const successCount = rows.reduce((sum, row) => sum + row.logs.filter(l => l.result === 'Bokat möte').length, 0);
+      return `
+        <div class="analysisCol">
+          <h4>${day.label}</h4>
+          <div class="analysisSummary">${callCount} samtal • ${answerCount} svar • ${successCount} bokat</div>
+          ${rows.length ? rows.map(row => {
+            const attempts = row.logs.filter(l => l.event === 'Ringt').length;
+            const times = row.logs.map(l => `${fmtShort(l.createdAt)} — ${[l.outcome, l.result].filter(Boolean).join(' / ') || l.event}`).join('<br>');
+            return `<div class="analysisItem"><div class="analysisName">${escapeHtml(row.lead.organization || 'Namnlös')}</div><div class="analysisMeta">${escapeHtml(row.lead.contactPerson || '')}${row.lead.contactPerson ? ' • ' : ''}${attempts} försök<br>${times}</div></div>`;
+          }).join('') : '<div class="emptyState">Ingen aktivitet.</div>'}
+        </div>`;
+    }).join('');
+  }
+
+  function openTasksModal(){
+    els.tasksOverlay.classList.add('open');
+  }
+
+  function closeTasksModal(){
+    els.tasksOverlay.classList.remove('open');
+  }
+
+  function openAnalysisModal(){
+    renderAnalysis();
+    els.analysisOverlay.classList.add('open');
+  }
+
+  function closeAnalysisModal(){
+    els.analysisOverlay.classList.remove('open');
+  }
+
   function renderAll(){
     renderDate();
     renderStats();
     renderTasks();
     renderLeads();
     renderTimer();
+    renderBackupMeta();
     updateAppendReady();
     if (state.ui.activeLeadId) renderModal();
   }
@@ -986,6 +1087,12 @@ els.modalEmailInput.value = lead.email || "";
 
     state.goalCalls = Math.round(n);
     persistAndRender();
+  });
+
+  els.resetTodayBtn?.addEventListener("click", () => {
+    state.ui.dayResetByDate[todayKey()] = Date.now();
+    persistAndRender();
+    toast("Dagens räknare nollställda.");
   });
 
   els.timerToggleBtn.addEventListener("click", () => {
@@ -1017,13 +1124,20 @@ els.modalEmailInput.value = lead.email || "";
     persistAndRender();
   });
 
-  els.dataBtn.addEventListener("click", openDataModal);
+  els.dataBtn?.addEventListener("click", openDataModal);
   els.addLeadBtn.addEventListener("click", openAddDirect);
+  els.exportBtnStart?.addEventListener("click", exportJson);
+  els.analysisBtn?.addEventListener("click", openAnalysisModal);
+  els.openTasksBtn?.addEventListener("click", openTasksModal);
+  els.filterAllBtn?.addEventListener("click", () => { state.ui.filterMode = "all"; persistAndRender(); });
+  els.filterUnprospectedBtn?.addEventListener("click", () => { state.ui.filterMode = "unprospected"; persistAndRender(); });
   els.quoteBtn.addEventListener("click", openQuoteModal);
 
   els.closeDataModalBtn.addEventListener("click", closeDataModal);
   els.closeQuoteModalBtn.addEventListener("click", closeQuoteModal);
   els.closeMeetingModalBtn.addEventListener("click", closeMeetingModal);
+  els.closeTasksModalBtn?.addEventListener("click", closeTasksModal);
+  els.closeAnalysisModalBtn?.addEventListener("click", closeAnalysisModal);
 
   els.quoteOverlay.addEventListener("click", (e) => {
     if (e.target === els.quoteOverlay) closeQuoteModal();
@@ -1036,6 +1150,8 @@ els.modalEmailInput.value = lead.email || "";
   els.meetingOverlay.addEventListener("click", (e) => {
     if (e.target === els.meetingOverlay) closeMeetingModal();
   });
+  els.tasksOverlay?.addEventListener("click", (e) => { if (e.target === els.tasksOverlay) closeTasksModal(); });
+  els.analysisOverlay?.addEventListener("click", (e) => { if (e.target === els.analysisOverlay) closeAnalysisModal(); });
 
   els.newQuoteBtn.addEventListener("click", setRandomQuote);
 
@@ -1210,6 +1326,15 @@ els.modalEmailInput.value = lead.email || "";
     lead.updatedAt = nowIso();
     persistAndRender();
     toast("VNR sparad.");
+  });
+
+  els.saveContactBtn?.addEventListener("click", () => {
+    const lead = getActiveLead();
+    if (!lead) return;
+    lead.contactPerson = els.modalContactInput.value.trim();
+    lead.updatedAt = nowIso();
+    persistAndRender();
+    toast("Kontakt sparad.");
   });
 
   els.saveLinkBtn.addEventListener("click", () => {
