@@ -942,6 +942,34 @@ button{cursor:pointer}
   .iconBtn{width:38px;height:38px}
   .stackButtons{max-width:none}
   .quoteText{font-size:22px}
+
+    /* Släpp vertikal låsning på mobil */
+  body{
+    overflow:auto;
+  }
+
+  .app{
+    height:auto;
+    min-height:100dvh;
+    overflow:visible;
+  }
+
+  .shell{
+    height:auto;
+    min-height:100dvh;
+    overflow:visible;
+  }
+
+  .leadSection{
+    flex:unset;
+    min-height:auto;
+  }
+
+  .leadGrid{
+    flex:unset;
+    min-height:auto;
+    overflow:visible;
+  }
 }
 
 /* === Scrollbar styling (HyenaX2) === */
