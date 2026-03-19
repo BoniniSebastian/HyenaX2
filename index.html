@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#050b12" />
   <title>HyenaX2</title>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
   <div class="app">
@@ -75,6 +75,10 @@
           <span class="btnIcon">🎲</span><span>Överraska mig</span>
         </button>
 
+        <button class="actionBtn ghost fixedBtn" id="quoteBtn" type="button">
+          <span class="btnIcon">❝</span><span>H-Quote</span>
+        </button>
+
         <button class="actionBtn ghost fixedBtn" id="dataBtn" type="button">
           <span class="btnIcon">☰</span><span>Data</span>
         </button>
@@ -108,6 +112,7 @@
       </section>
     </main>
 
+    <!-- Ringkort -->
     <div class="overlay" id="overlay">
       <div class="modal callModal">
         <div class="modalTop">
@@ -122,9 +127,14 @@
           <section class="modalCard">
             <div class="cardTitleRow">
               <h3>Kontakt</h3>
-              <button class="actionBtn small amber fixedMiniBtn" id="markBtn" type="button">
-                <span class="btnIcon">💡</span><span>Markera</span>
-              </button>
+              <div class="toolbar wrap">
+                <button class="actionBtn small amber fixedMiniBtn" id="markBtn" type="button">
+                  <span class="btnIcon">💡</span><span>Markera</span>
+                </button>
+                <button class="actionBtn small fixedMiniBtn" id="prospectedBtn" type="button">
+                  <span class="btnIcon">◎</span><span>Prospekterad</span>
+                </button>
+              </div>
             </div>
 
             <div class="infoRow">
@@ -141,8 +151,23 @@
 
             <div class="infoRow">
               <div class="infoLabel">VNR</div>
-              <div class="infoValue" id="modalVnr">-</div>
-              <button class="actionBtn small fixedMiniBtn" id="copyVnrBtn" type="button"><span>Kopiera</span></button>
+              <input class="field inlineField" id="modalVnrInput" type="text" placeholder="Lägg till VNR" />
+              <button class="actionBtn small fixedMiniBtn" id="saveVnrBtn" type="button"><span>Spara</span></button>
+            </div>
+
+            <div class="infoRow">
+              <div class="infoLabel">Länk</div>
+              <input class="field inlineField" id="modalLinkInput" type="text" placeholder="https://..." />
+              <button class="actionBtn small fixedMiniBtn" id="saveLinkBtn" type="button"><span>Spara</span></button>
+            </div>
+
+            <div class="toolbar wrap">
+              <button class="actionBtn fixedBtn" id="openLinkBtn" type="button">
+                <span class="btnIcon">🔗</span><span>Öppna länk</span>
+              </button>
+              <button class="actionBtn ghost fixedBtn" id="copyLinkBtn" type="button">
+                <span class="btnIcon">⧉</span><span>Kopiera länk</span>
+              </button>
             </div>
 
             <div class="toolbar wrap">
@@ -184,6 +209,12 @@
                 <span class="btnIcon">–</span><span>Ej intresserad</span>
               </button>
             </div>
+
+            <div class="toolbar wrap meetingTools">
+              <button class="actionBtn ghost fixedBtn" id="meetingNotesBtn" type="button">
+                <span class="btnIcon">📝</span><span>Mötesanteckningar</span>
+              </button>
+            </div>
           </section>
         </div>
 
@@ -219,6 +250,7 @@
       </div>
     </div>
 
+    <!-- Data -->
     <div class="overlay" id="dataOverlay">
       <div class="modal dataModal">
         <div class="modalTop">
@@ -232,9 +264,8 @@
         <section class="modalCard">
           <div class="cardTitleRow">
             <h3>Klistra in från Excel</h3>
-            <div class="subtle">Organisation, Kontaktperson, Telefon, E-post, VNR, Anteckning</div>
+            <div class="subtle">Organisation, Kontaktperson, Telefon, E-post, VNR, Prospekterad, Länk, Anteckning</div>
           </div>
-
           <textarea id="pasteArea" class="field area dataArea" placeholder="Klistra in från Excel här..."></textarea>
 
           <div class="toolbar wrap">
@@ -255,7 +286,6 @@
             <h3>Backup</h3>
             <div class="subtle">JSON in/ut</div>
           </div>
-
           <div class="stackButtons">
             <button class="actionBtn fixedBtn" id="exportBtn" type="button">
               <span class="btnIcon">↓</span><span>Exportera backup</span>
@@ -279,6 +309,11 @@
             <input class="field" id="manualPhone" type="text" placeholder="Telefon" />
             <input class="field" id="manualEmail" type="text" placeholder="E-post" />
             <input class="field" id="manualVnr" type="text" placeholder="VNR" />
+            <input class="field" id="manualLink" type="text" placeholder="Länk" />
+            <label class="toggleRow">
+              <input type="checkbox" id="manualProspected" />
+              <span>Prospekterad</span>
+            </label>
             <input class="field" id="manualNote" type="text" placeholder="Anteckning" />
           </div>
 
@@ -291,9 +326,118 @@
       </div>
     </div>
 
+    <!-- Quotes -->
+    <div class="overlay" id="quoteOverlay">
+      <div class="modal quoteModal">
+        <div class="modalTop">
+          <div>
+            <div class="modalTitle">H-Quote</div>
+            <div class="modalMeta">Slumpad push när du behöver den</div>
+          </div>
+          <button class="iconBtn" id="closeQuoteModalBtn" type="button">✕</button>
+        </div>
+        <section class="modalCard quoteCard">
+          <div class="quoteText" id="quoteText">Nästa samtal kan vara det viktigaste du gjort i år</div>
+          <div class="toolbar wrap quoteToolbar">
+            <button class="actionBtn primary fixedBtn" id="newQuoteBtn" type="button">
+              <span class="btnIcon">❞</span><span>Ny quote</span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Mötesanteckningar -->
+    <div class="overlay" id="meetingOverlay">
+      <div class="modal meetingModal">
+        <div class="modalTop">
+          <div>
+            <div class="modalTitle">Mötesanteckningar</div>
+            <div class="modalMeta">Fyll i det du vill få med till CRM</div>
+          </div>
+          <button class="iconBtn" id="closeMeetingModalBtn" type="button">✕</button>
+        </div>
+
+        <section class="modalCard">
+          <div class="meetingGrid">
+            <div class="meetingField">
+              <label>Moln förvaltning</label>
+              <select class="field" id="meetingMolnForvaltning">
+                <option value="">Välj</option>
+                <option value="MS">MS</option>
+                <option value="Google">Google</option>
+              </select>
+            </div>
+
+            <div class="meetingField">
+              <label>Moln skola</label>
+              <select class="field" id="meetingMolnSkola">
+                <option value="">Välj</option>
+                <option value="MS">MS</option>
+                <option value="Google">Google</option>
+                <option value="Båda">Båda</option>
+              </select>
+            </div>
+
+            <div class="meetingField">
+              <label>Elevregister</label>
+              <select class="field" id="meetingElevregister">
+                <option value="">Välj</option>
+                <option value="IST Admin">IST Admin</option>
+                <option value="IST Extens">IST Extens</option>
+                <option value="Edlevo">Edlevo</option>
+                <option value="Schoolsoft">Schoolsoft</option>
+              </select>
+            </div>
+
+            <div class="meetingField full">
+              <label>Lärplattform</label>
+              <input class="field" id="meetingLarplattform" type="text" placeholder="Fritext" />
+            </div>
+
+            <div class="meetingField full">
+              <label>IDP</label>
+              <input class="field" id="meetingIdp" type="text" placeholder="Fritext" />
+            </div>
+
+            <div class="meetingField full">
+              <label>Köps synkar idag (kontosynk ex.), vilka och av vem</label>
+              <textarea class="field area meetingArea" id="meetingSynkar"></textarea>
+            </div>
+
+            <div class="meetingField full">
+              <label>Antal och vilka integrationer finns</label>
+              <textarea class="field area meetingArea" id="meetingIntegrationer"></textarea>
+            </div>
+
+            <div class="meetingField full">
+              <label>Licensinköp</label>
+              <textarea class="field area meetingArea" id="meetingLicens"></textarea>
+            </div>
+
+            <div class="meetingField full">
+              <label>Planerad upphandling av</label>
+              <textarea class="field area meetingArea" id="meetingUpphandling"></textarea>
+            </div>
+
+            <div class="meetingField full">
+              <label>Mötesanteckningar</label>
+              <textarea class="field area meetingArea large" id="meetingNotes"></textarea>
+            </div>
+          </div>
+
+          <div class="toolbar wrap">
+            <button class="actionBtn primary fixedBtn" id="saveMeetingBtn" type="button">
+              <span class="btnIcon">✓</span><span>Spara mötesanteckningar</span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
     <div class="toastWrap" id="toastWrap"></div>
   </div>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
